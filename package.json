@@ -1,0 +1,23 @@
+{
+  "name": "mywms",
+  "private": true,
+  "version": "1.10.0",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run dev --workspace apps/web",
+    "build:api": "npm run build --workspace apps/api",
+    "build:web": "npm run build --workspace apps/web",
+    "db:status": "npm run db:status --workspace apps/api",
+    "db:baseline": "npm run db:baseline --workspace apps/api",
+    "db:migrate": "npm run db:migrate --workspace apps/api",
+    "db:apply": "npm run db:apply --workspace apps/api --",
+    "db:prod:status": "npm run db:prod:status --workspace apps/api",
+    "db:prod:migrate": "npm run db:prod:migrate --workspace apps/api",
+    "db:prod:apply": "npm run db:prod:apply --workspace apps/api --",
+    "create-admin": "npm run create-admin --workspace apps/api"
+  }
+}

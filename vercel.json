@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "VITE_API_BASE_URL=https://wms-production-23d1.up.railway.app npm run build:web",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+Enterprise WMS frontend package
+Static hosting marker is available.
+API_URL=https://wms-production-23d1.up.railway.app
