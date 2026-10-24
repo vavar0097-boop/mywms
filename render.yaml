@@ -1,10 +1,10 @@
 services:
-  - type: web
-    name: wms-api
-    runtime: node
-    plan: free
-    buildCommand: npm install && npm run build:api
-    startCommand: npm run start --workspace apps/api
+  - ttype: web
+    name: mywms-api
+    env: node
+    rootDir: apps/api
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

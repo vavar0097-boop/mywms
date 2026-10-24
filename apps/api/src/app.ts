@@ -1,7 +1,7 @@
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express from "express";
+import express, { type Request, type Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 
@@ -50,13 +50,16 @@ function isAllowedOrigin(origin?: string) {
 
 app.use(
   cors({
-    origin(origin, callback) {
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) => {
       if (isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
 
-      callback(new Error(`CORS blocked origin: ${origin}`));
+      callback(null, false);
     },
     credentials: true,
   }),
@@ -91,11 +94,11 @@ function healthResponse() {
   };
 }
 
-app.get("/health", (_req, res) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json(healthResponse());
 });
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({
     ...healthResponse(),
   });
