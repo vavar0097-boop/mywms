@@ -2,7 +2,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
-import helmet from "helmet";
+// import helmet from "helmet";
 import morgan from "morgan";
 
 import { logger } from "./config/logger";
@@ -48,6 +48,11 @@ function isAllowedOrigin(origin?: string) {
   );
 }
 
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://NAMA-PROJECT-KAMU.pages.dev'],
+  credentials: true
+}));
+
 app.use(
   cors({
     origin: (
@@ -65,7 +70,7 @@ app.use(
   }),
 );
 
-app.use(helmet());
+// app.use(helmet());
 app.use(compression());
 app.use(cookieParser());
 app.use(express.json());
