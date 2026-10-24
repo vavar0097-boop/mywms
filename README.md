@@ -59,6 +59,25 @@ ADMIN_USERNAME=<username> ADMIN_PASSWORD=<password> npm run create-admin
 If Vite starts on another port, use the port shown in the `npm run dev:web`
 terminal output.
 
+### Production API Deployment
+
+The web app is a static Vite build on Cloudflare Pages. The Express app in
+`apps/api` is exposed as a Vercel serverless API; Supabase is its data backend.
+Set `VITE_API_BASE_URL` in Cloudflare Pages' production build environment to the
+verified Vercel API origin (without `/api`). Do not set this to the Supabase
+URL. No API hostname is hardcoded in the repository: use the Vercel deployment's
+actual domain, then rebuild Pages. The frontend fails fast if the API base is
+missing, rather than silently sending `/api` requests to the static SPA host.
+
+Vercel must also define `CLIENT_ORIGIN`, `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` for
+the API function. Set `CLIENT_ORIGIN` to the Pages URL. Keep all secret values
+in the provider's environment settings, not in Git.
+
+Before testing login, verify `GET <API origin>/api/health` returns HTTP 200 and
+`POST <API origin>/api/auth/login` reaches the Express login route. Configure
+the API's `CLIENT_ORIGIN` to the deployed Pages/Vercel frontend origin(s).
+
 ### Database Binding
 
 The app uses Supabase for runtime data access through `SUPABASE_URL` and

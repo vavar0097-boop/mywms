@@ -33,7 +33,6 @@ const allowedOrigins = env.CLIENT_ORIGIN
   .filter(Boolean);
 const allowedOriginPatterns = [
   /^https:\/\/[a-z0-9-]+\.pages\.dev$/i,
-  /^https:\/\/[a-z0-9-]+\.netlify\.app$/i,
   /^https:\/\/[a-z0-9-]+\.vercel\.app$/i,
 ];
 

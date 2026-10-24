@@ -3,9 +3,16 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || "";
+const normalizedBaseUrl = rawBaseUrl
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
-const normalizedBaseUrl = rawBaseUrl.replace(/\/$/, "");
+if (!normalizedBaseUrl && !import.meta.env.DEV) {
+  throw new Error(
+    "VITE_API_BASE_URL must be set for production builds to prevent API requests from falling through to the SPA host.",
+  );
+}
 
 const baseURL = normalizedBaseUrl ? `${normalizedBaseUrl}/api` : "/api";
 

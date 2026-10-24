@@ -22,8 +22,7 @@ export const appUrl =
   process.env.WMS_APP_URL || "https://wms-8uc.pages.dev";
 
 export const apiBaseUrl =
-  process.env.WMS_API_BASE_URL ||
-  "https://wms-api-production-2caf.up.railway.app";
+  process.env.WMS_API_BASE_URL || "";
 
 export const reportMonth =
   process.env.WMS_REPORT_MONTH || currentJakartaMonth();

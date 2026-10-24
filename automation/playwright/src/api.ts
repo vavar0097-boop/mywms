@@ -3,6 +3,12 @@ import { expect, request } from "@playwright/test";
 import { apiBaseUrl, appUrl, Credentials } from "./env";
 
 export async function createApiContext() {
+  if (!apiBaseUrl) {
+    throw new Error(
+      "Set WMS_API_BASE_URL to the active API origin in automation/playwright/.env",
+    );
+  }
+
   return request.newContext({
     baseURL: `${apiBaseUrl.replace(/\/$/, "")}/api/`,
     extraHTTPHeaders: {

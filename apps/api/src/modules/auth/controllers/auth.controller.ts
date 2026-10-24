@@ -11,6 +11,7 @@ import {
 } from "../../../utils/response";
 import { env } from "../../../config/env";
 import { AuthService } from "../services/auth.service";
+import { loginSchema } from "../validators/auth.validator";
 
 const isProduction = env.NODE_ENV === "production";
 const accessTokenCookieOptions = {
@@ -32,10 +33,7 @@ export class AuthController {
     req: Request,
     res: Response
   ) => {
-    const {
-      username,
-      password,
-    } = req.body;
+    const { username, password } = loginSchema.parse(req.body);
 
     const result = await this.service.login({
       username,
