@@ -19,7 +19,7 @@ const roleEnv: Record<RoleName, [string, string]> = {
 };
 
 export const appUrl =
-  process.env.WMS_APP_URL || "https://wms-8uc.pages.dev";
+  process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 
 export const apiBaseUrl =
   process.env.WMS_API_BASE_URL || "";

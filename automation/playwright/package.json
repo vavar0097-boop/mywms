@@ -14,8 +14,8 @@
     "test:login:headed": "playwright test tests/login.spec.ts --headed --project=firefox",
     "test:login:record": "WMS_RECORD=true playwright test tests/login.spec.ts --headed --project=firefox",
     "test:finance": "playwright test tests/finance-report.spec.ts",
-    "codegen": "playwright codegen --browser=firefox https://wms-8uc.pages.dev",
-    "codegen:login": "playwright codegen --browser=firefox https://wms-8uc.pages.dev/login",
+    "codegen": "playwright codegen --browser=firefox https://mywms-686.pages.dev",
+    "codegen:login": "playwright codegen --browser=firefox https://mywms-686.pages.dev/login",
     "install:browsers": "playwright install firefox",
     "install:firefox": "playwright install firefox"
   },

@@ -3,16 +3,12 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || "";
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "https://mywms-six.vercel.app";
 const normalizedBaseUrl = rawBaseUrl
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "");
-
-if (!normalizedBaseUrl && !import.meta.env.DEV) {
-  throw new Error(
-    "VITE_API_BASE_URL must be set for production builds to prevent API requests from falling through to the SPA host.",
-  );
-}
 
 const baseURL = normalizedBaseUrl ? `${normalizedBaseUrl}/api` : "/api";
 

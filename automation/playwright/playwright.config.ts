@@ -11,7 +11,7 @@ const startLocalWeb = process.env.WMS_START_LOCAL_WEB === "true";
 const appUrl =
   startLocalWeb
     ? process.env.WMS_LOCAL_APP_URL || "http://127.0.0.1:5173"
-    : process.env.WMS_APP_URL || "https://wms-8uc.pages.dev";
+    : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 const recordRun = process.env.WMS_RECORD === "true";
 
 export default defineConfig({
