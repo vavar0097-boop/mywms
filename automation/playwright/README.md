@@ -61,7 +61,7 @@ Finance report only:
 npm run test:finance
 ```
 
-Enable the Google Sheets assertion only after Railway has Google env vars:
+Enable the Google Sheets assertion only after the production API has Google env vars:
 
 ```env
 WMS_SYNC_GOOGLE=true
