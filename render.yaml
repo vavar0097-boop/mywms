@@ -1,5 +1,5 @@
 services:
-  - ttype: web
+  - type: web
     name: mywms-api
     env: node
     rootDir: apps/api

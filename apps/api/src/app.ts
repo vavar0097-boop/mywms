@@ -48,11 +48,6 @@ function isAllowedOrigin(origin?: string) {
   );
 }
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'https://NAMA-PROJECT-KAMU.pages.dev'],
-  credentials: true
-}));
-
 app.use(
   cors({
     origin: (
