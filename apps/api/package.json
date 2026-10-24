@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:api": "npm run build",
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "create-admin": "tsx scripts/create-admin.ts",

@@ -1,3 +1,4 @@
 Enterprise WMS frontend package
 Static hosting marker is available.
-API_BASE_URL=configured with VITE_API_BASE_URL at build time
+FRONTEND_URL=https://mywms-686.pages.dev
+API_BASE_URL=https://mywms-six.vercel.app
