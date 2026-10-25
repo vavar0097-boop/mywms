@@ -213,11 +213,14 @@ export class UserRepository {
     const { error } = await supabase
       .from("users")
       .update({
+        username: `deleted-${id}`,
+        password_hash: "!deleted!",
         is_deleted: true,
         is_active: false,
         deleted_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("is_deleted", false);
 
     if (error) {
       throw error;

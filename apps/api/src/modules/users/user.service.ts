@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 
 import {
   BadRequestError,
+  ConflictError,
   NotFoundError,
 } from "../../utils/errors";
 import { UserRepository, UserRow } from "./user.repository";
@@ -122,12 +123,27 @@ export class UserService {
     await assertRole(roleId);
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await userRepository.create({
-      username,
-      full_name: fullName,
-      password_hash: passwordHash,
-      is_active: payload.is_active ?? true,
-    });
+    let user: { id: string };
+
+    try {
+      user = await userRepository.create({
+        username,
+        full_name: fullName,
+        password_hash: passwordHash,
+        is_active: payload.is_active ?? true,
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: unknown }).code === "23505"
+      ) {
+        throw new ConflictError("Username already exists");
+      }
+
+      throw error;
+    }
 
     await userRepository.setRole(user.id, roleId);
 
