@@ -5,7 +5,7 @@ import axios, {
 
 const rawBaseUrl =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
-  "https://mywms-six.vercel.app";
+  (import.meta.env.DEV ? "" : "https://mywms-six.vercel.app");
 const normalizedBaseUrl = rawBaseUrl
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "");

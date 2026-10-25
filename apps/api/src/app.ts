@@ -2,7 +2,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
-// import helmet from "helmet";
+import helmet from "helmet";
 import morgan from "morgan";
 
 import { logger } from "./config/logger";
@@ -30,21 +30,36 @@ const app = express();
 const allowedOrigins = env.CLIENT_ORIGIN
   .split(",")
   .map((origin) => origin.trim())
-  .filter(Boolean);
-const allowedOriginPatterns = [
-  /^https:\/\/[a-z0-9-]+\.pages\.dev$/i,
-  /^https:\/\/[a-z0-9-]+\.vercel\.app$/i,
-];
+  .filter(Boolean)
+  .map((origin) => {
+    try {
+      const parsedOrigin = new URL(origin);
+      return ["http:", "https:"].includes(parsedOrigin.protocol)
+        ? parsedOrigin.origin
+        : "";
+    } catch {
+      return "";
+    }
+  })
+  .filter(Boolean)
+  .concat(
+    env.NODE_ENV === "development"
+      ? ["http://localhost:5173", "http://127.0.0.1:5173"]
+      : [],
+  );
+
+if (env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+  throw new Error(
+    "CLIENT_ORIGIN must include at least one valid origin in production",
+  );
+}
 
 function isAllowedOrigin(origin?: string) {
   if (!origin) {
-    return true;
+    return false;
   }
 
-  return (
-    allowedOrigins.includes(origin) ||
-    allowedOriginPatterns.some((pattern) => pattern.test(origin))
-  );
+  return allowedOrigins.includes(origin);
 }
 
 app.use(
@@ -64,10 +79,26 @@ app.use(
   }),
 );
 
-// app.use(helmet());
+app.use(helmet());
 app.use(compression());
 app.use(cookieParser());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const isStateChangingMethod = !["GET", "HEAD", "OPTIONS"].includes(
+    req.method,
+  );
+
+  if (isStateChangingMethod && !isAllowedOrigin(req.get("origin"))) {
+    res.status(403).json({
+      success: false,
+      message: "Request origin is not allowed",
+    });
+    return;
+  }
+
+  next();
+});
 
 app.use(
   morgan("combined", {
