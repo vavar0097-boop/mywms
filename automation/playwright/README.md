@@ -19,9 +19,21 @@ Fill `.env` with live QA credentials. The `.env` file is ignored by git.
 npm test
 ```
 
-The default run starts with the `setup` project. It logs in as admin, owner,
-finance, warehouse, and cashier, writes session files into `.auth/`, then the
-Firefox tests reuse those sessions.
+Without credentials, the default run executes public smoke checks for the login
+page and API health/CORS. Run these checks directly with:
+
+```bash
+npm run test:smoke
+```
+
+To enable authenticated tests, fill all five role credentials in `.env`. The
+`setup` project logs in as admin, owner, finance, warehouse, and cashier, writes
+session files into `.auth/`, and then the Firefox tests reuse those sessions.
+Run the complete configured suite with:
+
+```bash
+npm run test:full
+```
 
 If the shared hosting frontend is unavailable, run the suite against a local Vite
 frontend connected to the production API:
@@ -73,7 +85,12 @@ Enable create/update/delete workflow coverage only when the target environment i
 WMS_ALLOW_MUTATION=true
 ```
 
-The default tests verify:
+The public smoke checks verify:
+
+- login form controls and invalid-login handling
+- API health endpoint and login CORS preflight
+
+When role credentials are configured, the authenticated tests verify:
 
 - admin dashboard can open
 - owner dashboard can access owner actions without forbidden API calls

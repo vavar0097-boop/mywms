@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
+    "test:smoke": "playwright test --project=public-smoke",
+    "test:full": "playwright test",
     "test:local": "WMS_START_LOCAL_WEB=true playwright test",
     "test:firefox": "playwright test --project=firefox",
     "test:headed": "playwright test --headed",

@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+import { credentialsFor } from "./src/env";
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.join(configDir, ".env"), quiet: true });
@@ -13,6 +14,8 @@ const appUrl =
     ? process.env.WMS_LOCAL_APP_URL || "http://127.0.0.1:5173"
     : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 const recordRun = process.env.WMS_RECORD === "true";
+const roles = ["admin", "owner", "finance", "warehouse", "cashier"] as const;
+const hasAllRoleCredentials = roles.every((role) => credentialsFor(role));
 
 export default defineConfig({
   testDir: "./tests",
@@ -55,18 +58,30 @@ export default defineConfig({
     : undefined,
   projects: [
     {
-      name: "setup",
-      testMatch: /.*\.setup\.ts/,
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "firefox",
-      dependencies: ["setup"],
-      testIgnore: /.*\.setup\.ts/,
+      name: "public-smoke",
+      testMatch: /(?:login|api-health)\.spec\.ts/,
       use: {
         ...devices["Desktop Firefox"],
-        storageState: ".auth/admin.json",
+        storageState: { cookies: [], origins: [] },
       },
     },
+    ...(hasAllRoleCredentials
+      ? [
+          {
+            name: "setup",
+            testMatch: /.*\.setup\.ts/,
+            use: { ...devices["Desktop Firefox"] },
+          },
+          {
+            name: "firefox",
+            dependencies: ["setup"],
+            testIgnore: /(?:\.setup|login|api-health)\.spec\.ts/,
+            use: {
+              ...devices["Desktop Firefox"],
+              storageState: ".auth/admin.json",
+            },
+          },
+        ]
+      : []),
   ],
 });
