@@ -106,10 +106,6 @@ test.describe("optional mutation workflows", () => {
         "Playwright QA recipe",
       );
     } finally {
-      if (createdMenuId) {
-        await api.delete(`settings/pos-menu/${createdMenuId}`, { headers });
-      }
-
       await api.dispose();
     }
   });

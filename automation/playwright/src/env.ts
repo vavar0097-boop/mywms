@@ -33,6 +33,9 @@ export const syncGoogle = process.env.WMS_SYNC_GOOGLE === "true";
 
 export const allowMutation = process.env.WMS_ALLOW_MUTATION === "true";
 
+export const purchaseReceiveRpcReady =
+  process.env.WMS_PO_RECEIVE_RPC_READY === "true";
+
 export function storageStatePath(role: RoleName) {
   return `.auth/${role}.json`;
 }
