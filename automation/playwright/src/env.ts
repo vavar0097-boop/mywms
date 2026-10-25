@@ -24,7 +24,7 @@ export const appUrl =
     : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 
 export const apiBaseUrl =
-  process.env.WMS_API_BASE_URL || "https://mywms-six.vercel.app";
+  process.env.WMS_API_BASE_URL || "https://mywms-api.vercel.app";
 
 export const reportMonth =
   process.env.WMS_REPORT_MONTH || currentJakartaMonth();
