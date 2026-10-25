@@ -74,13 +74,18 @@ the API function. Set `CLIENT_ORIGIN` to the Pages URL. Keep all secret values
 in the provider's environment settings, not in Git.
 
 For this repository's Vercel API deployment, set the Vercel project root to
-`apps/api`. Vercel discovers the function at `apps/api/api/[...route].js`; its
-build command is `npm run build:api`. The project must have a successful
-deployment assigned to `mywms-six.vercel.app`; a `DEPLOYMENT_NOT_FOUND` response
-means the hostname has no active deployment and cannot be fixed by changing
-environment variables alone.
+`apps/api` and use the Express framework preset. The Express app is exported
+from `apps/api/src/app.ts` and Vercel should serve it as one function so Express
+can route both one-segment and nested paths. The API build command is
+`npm run build:api`. The web app is deployed separately on Cloudflare Pages;
+do not use a repository-root Vercel SPA deployment for the API project. The
+project must have a successful deployment assigned to `mywms-six.vercel.app`; a
+`DEPLOYMENT_NOT_FOUND` response means the hostname has no active deployment and
+cannot be fixed by changing environment variables alone.
 
 Before testing login, verify `GET <API origin>/api/health` returns HTTP 200 and
+an `OPTIONS <API origin>/api/auth/login` preflight from the deployed frontend
+returns HTTP 204 with the matching `Access-Control-Allow-Origin`. Then verify
 `POST <API origin>/api/auth/login` reaches the Express login route. Configure
 the API's `CLIENT_ORIGIN` to the deployed frontend origin(s), including
 `https://mywms-686.pages.dev`.
