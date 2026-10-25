@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type APIResponse } from "@playwright/test";
 
 import { authHeaders, loginApi, rowsFromPayload } from "../src/api";
+import { login } from "../src/auth";
 import {
   allowMutation,
   credentialsFor,
@@ -28,6 +29,7 @@ type StockRow = {
 type MenuItem = {
   id: string;
   item_id: string | null;
+  menu_name: string;
   price: number | string;
   is_available: boolean;
   bom_components?: unknown[];
@@ -218,7 +220,8 @@ test.describe("prototype transactional workflows", () => {
     }
   });
 
-  test("cashier sells, deposits at close, and finance verifies settlement", async () => {
+  test("cashier opens shift, sells through POS, deposits, prints receipt, and closes shift", async ({ page }) => {
+    test.setTimeout(90_000);
     test.skip(
       !allowMutation,
       "Set WMS_ALLOW_MUTATION=true only for the approved prototype test environment",
@@ -303,23 +306,21 @@ test.describe("prototype transactional workflows", () => {
       });
       await responseData(initialStockResponse);
 
-      const openResponse = await cashier.api.post("cashier-sessions/open", {
-        headers: cashierHeaders,
-        data: {
-          location_id: qaLocationId,
-          shift_name: "Pagi",
-          opening_cash: 0,
-        },
-      });
-      const openedSession = await responseData<Record<string, unknown>>(openResponse);
-      openedSessionId = String(
-        openedSession.cashier_session_id ?? openedSession.id ?? "",
-      ) || null;
+      await login(page, cashierCredentials!);
+      await page.goto("/pos");
+      await expect(page.getByRole("heading", { name: "Open Shift" })).toBeVisible();
+      await page.getByLabel("Work Location").selectOption(qaLocationId);
+      await page.locator("select").nth(1).selectOption("Pagi");
+      await page.getByLabel("Opening Cash").fill("0");
+      await page.getByRole("button", { name: "Start Selling" }).click();
+      await expect(page.getByRole("heading", { name: "Cart" })).toBeVisible();
 
       const sessionResponse = await cashier.api.get("cashier-sessions/active", {
         headers: cashierHeaders,
       });
       const session = await responseData<Record<string, unknown>>(sessionResponse);
+      openedSessionId = String(session.cashier_session_id ?? "") || null;
+      expect(openedSessionId, "POS shift should have a session id").toBeTruthy();
       locationId = String(session.location_id ?? qaLocationId);
       expect(locationId).toBeTruthy();
       stockBaseline = await currentQuantity(
@@ -331,61 +332,65 @@ test.describe("prototype transactional workflows", () => {
       expect(stockBaseline).toBeGreaterThanOrEqual(1);
 
       const unitPrice = Number(menuItem!.price);
-      const saleResponse = await cashier.api.post("pos/sales", {
-        headers: cashierHeaders,
-        data: {
-          items: [{ menu_item_id: menuItem!.id, quantity: 1 }],
-          payment_method: "CASH",
-          paid_amount: unitPrice,
-          reference_no: `PW-${Date.now()}`,
-        },
+      await page.getByRole("button", { name: `Increase ${menuItem!.menu_name}` }).click();
+      await expect(page.getByText(menuItem!.menu_name).first()).toBeVisible();
+      await page.getByLabel("Cash Received").fill(String(unitPrice));
+      await page.getByRole("button", { name: "Confirm Payment" }).click();
+      await expect(page.getByText("CASH paid and recorded")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Print receipt" })).toBeVisible();
+      const receiptText = await page.locator("aside").innerText();
+      const saleNumber = receiptText.match(/SALE-[A-Z0-9-]+/)?.[0];
+      expect(saleNumber, "POS receipt should show a generated sale number").toBeTruthy();
+      const receiptPopup = page.waitForEvent("popup");
+      await page.getByRole("button", { name: "Print receipt" }).click();
+      const receiptPage = await receiptPopup;
+      await expect(receiptPage.getByText("Enterprise WMS POS")).toBeVisible();
+      await expect(receiptPage.getByText(saleNumber!)).toBeVisible();
+      await receiptPage.close();
+
+      const salesResponse = await finance.api.get("finance/pos-sales?status=PAID&limit=100", {
+        headers: financeHeaders,
       });
-      const sale = await responseData<Sale>(saleResponse);
-      saleId = sale.sale_id;
-      expect(sale.grand_total).toBe(unitPrice);
+      const sales = await listFrom<Sale & { id: string; sale_no: string }>(salesResponse);
+      const sale = sales.find((entry) => entry.sale_no === saleNumber);
+      expect(sale, "The UI checkout should persist a paid sale in finance").toBeTruthy();
+      saleId = sale!.id;
+      expect(Number(sale!.grand_total)).toBe(unitPrice);
       expect(
         await currentQuantity(warehouse.api, warehouseHeaders, itemId, locationId),
       ).toBeCloseTo(stockBaseline - 1, 4);
       saleCompleted = true;
 
-      const depositResponse = await cashier.api.post("cashier-sessions/deposits", {
-        headers: cashierHeaders,
-        data: {
-          amount: sale.grand_total,
-          received_by: "Playwright QA finance",
-          notes: `Cashier close deposit for ${sale.sale_no}`,
-        },
-      });
-      await responseData(depositResponse);
+      await page.getByRole("button", { name: "Open cashier menu" }).click();
+      await page.getByRole("button", { name: "Setor Kas" }).click();
+      await page.getByPlaceholder("Amount").fill(String(unitPrice));
+      await page.getByPlaceholder("Received by").fill("Playwright QA Finance");
+      await page.getByPlaceholder("Notes").fill(`Cashier close deposit for ${saleNumber}`);
+      await page.getByRole("button", { name: "Save Deposit" }).click();
 
       const summaryResponse = await cashier.api.get("cashier-sessions/active", {
         headers: cashierHeaders,
       });
       const summary = await responseData<Record<string, unknown>>(summaryResponse);
       const actualCash = Number(summary.calculated_expected_cash ?? 0);
-      const closeResponse = await cashier.api.post(
-        `cashier-sessions/${openedSessionId}/close`,
-        {
-          headers: cashierHeaders,
-          data: { actual_cash: actualCash, notes: "Playwright QA end-of-day close" },
-        },
-      );
-      const closed = await responseData<Record<string, unknown>>(closeResponse);
-      expect(closed.status).toBe("CLOSED");
+      await page.getByRole("button", { name: "Close Shift" }).click();
+      const closeForm = page.locator("form").filter({ hasText: "Close Shift" });
+      await closeForm.getByPlaceholder("Actual cash").fill(String(actualCash));
+      await closeForm.getByPlaceholder("Notes").fill("Playwright QA end-of-day close");
+      await closeForm.getByRole("button", { name: "Close Shift" }).click();
+      await expect(page.getByRole("heading", { name: "Open Shift" })).toBeVisible();
 
-      const settlementsResponse = await finance.api.get(
-        "finance/cashier-settlements?status=CLOSED&limit=100",
-        { headers: financeHeaders },
-      );
-      const settlements = await listFrom<Record<string, unknown>>(settlementsResponse);
-      expect(
-        settlements.some(
-          (entry) => entry.cashier_session_id === openedSessionId,
-        ),
-      ).toBe(true);
+      const closeResponse = await cashier.api.get("finance/cashier-settlements?status=CLOSED&limit=100", {
+        headers: financeHeaders,
+      });
+      const closedRows = await listFrom<Record<string, unknown>>(closeResponse);
+      const closed = closedRows.find((entry) => entry.cashier_session_id === openedSessionId);
+      expect(closed?.status).toBe("CLOSED");
+      expect(Number(closed?.total_deposits)).toBeGreaterThanOrEqual(unitPrice);
+      expect(Number(closed?.total_sales)).toBe(unitPrice);
       saleCompleted = true;
       console.log(
-        `Retained QA POS sale ${saleId}; cashier session=${openedSessionId}; outlet=${qaLocationId}; item=${itemId}; stock remaining=${stockBaseline - 1}`,
+        `Retained UI QA POS sale ${saleNumber} (${saleId}); closed cashier session=${openedSessionId}; outlet=${qaLocationId}; item=${itemId}; stock remaining=${stockBaseline - 1}`,
       );
     } finally {
       if (saleId && !saleCompleted) {
@@ -396,23 +401,34 @@ test.describe("prototype transactional workflows", () => {
         if (voidResponse.ok()) saleCompleted = false;
       }
 
+      let cleanupError: unknown;
       if (openedSessionId) {
-        const active = await cashier.api.get("cashier-sessions/active", {
-          headers: cashierHeaders,
-        });
-        const activeSession = await responseData<Record<string, unknown> | null>(active);
-        if (activeSession) {
-          const close = await cashier.api.post(
-            `cashier-sessions/${openedSessionId}/close`,
-            {
-              headers: cashierHeaders,
-              data: {
-                actual_cash: Number(activeSession.calculated_expected_cash ?? 0),
-                notes: "Playwright QA cleanup close",
-              },
-            },
+        try {
+          const openSettlementsResponse = await finance.api.get(
+            "finance/cashier-settlements?status=OPEN&limit=100",
+            { headers: financeHeaders },
           );
-          await responseData(close);
+          const openSettlements = await listFrom<Record<string, unknown>>(
+            openSettlementsResponse,
+          );
+          const openSession = openSettlements.find(
+            (entry) => entry.cashier_session_id === openedSessionId,
+          );
+          if (openSession) {
+            const closeResponse = await cashier.api.post(
+              `cashier-sessions/${openedSessionId}/close`,
+              {
+                headers: cashierHeaders,
+                data: {
+                  actual_cash: Number(openSession.calculated_expected_cash ?? 0),
+                  notes: "Playwright QA cleanup close",
+                },
+              },
+            );
+            await responseData(closeResponse);
+          }
+        } catch (error) {
+          cleanupError = error;
         }
       }
 
@@ -420,6 +436,7 @@ test.describe("prototype transactional workflows", () => {
       await warehouse.api.dispose();
       await admin.api.dispose();
       await finance.api.dispose();
+      if (cleanupError) throw cleanupError;
     }
   });
 });
