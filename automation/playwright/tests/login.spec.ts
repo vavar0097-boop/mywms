@@ -4,7 +4,15 @@ import { login } from "../src/auth";
 import {
   credentialsFor,
   missingCredentialsMessage,
+  RoleName,
 } from "../src/env";
+
+const nonAdminRoleHome: Record<Exclude<RoleName, "admin">, string> = {
+  owner: "/dashboard",
+  finance: "/dashboard/finance",
+  warehouse: "/dashboard/transfers",
+  cashier: "/pos",
+};
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -63,6 +71,24 @@ test.describe("login", () => {
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByText("POS Sales by Outlet")).toBeVisible();
   });
+
+  for (const role of Object.keys(nonAdminRoleHome) as Exclude<
+    RoleName,
+    "admin"
+  >[]) {
+    test(`${role} can login and lands on the correct home page`, async ({
+      page,
+    }) => {
+      const credentials = credentialsFor(role);
+      test.skip(!credentials, missingCredentialsMessage(role));
+
+      await login(page, credentials!);
+
+      await expect
+        .poll(() => new URL(page.url()).pathname)
+        .toBe(nonAdminRoleHome[role]);
+    });
+  }
 
   test("session cookie keeps protected dashboard accessible after reload", async ({
     page,
