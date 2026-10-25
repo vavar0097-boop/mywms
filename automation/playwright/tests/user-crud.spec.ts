@@ -13,7 +13,7 @@ async function unwrap(response: Awaited<ReturnType<import("@playwright/test").AP
 }
 
 test.describe("prototype user CRUD workflow", () => {
-  test("admin creates, updates, reads, and soft-deletes a QA user", async () => {
+  test("admin creates, updates, and reads a retained QA user", async () => {
     test.skip(
       !allowMutation,
       "Set WMS_ALLOW_MUTATION=true only for the approved prototype test environment",

@@ -20,7 +20,7 @@ type PosMenuRow = {
 };
 
 test.describe("optional mutation workflows", () => {
-  test("creates POS menu, saves BOM, verifies UI, then cleans up", async ({
+  test("creates POS menu, saves BOM, verifies UI, and retains QA records", async ({
     page,
   }) => {
     test.skip(
