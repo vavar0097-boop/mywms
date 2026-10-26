@@ -12,6 +12,7 @@ type Location = {
   id: string;
   location_type: string;
   is_active: boolean;
+  warehouse_id: string | null;
 };
 
 type StockRow = {
@@ -36,6 +37,7 @@ type PurchaseOrder = {
 
 type DailyPurchase = {
   id: string;
+  outlet_id?: string | null;
   status: string;
   total_amount: number | string;
 };
@@ -101,6 +103,105 @@ async function restoreQuantity(
 }
 
 test.describe("role business workflows", () => {
+  test("supervisor creates an outlet request and submits its daily purchase report to finance", async () => {
+    test.skip(!allowMutation, "Set WMS_ALLOW_MUTATION=true only for the approved QA database");
+    const supervisorCredentials = credentialsFor("supervisor");
+    const financeCredentials = credentialsFor("finance");
+    test.skip(!supervisorCredentials, missingCredentialsMessage("supervisor"));
+    test.skip(!financeCredentials, missingCredentialsMessage("finance"));
+
+    const supervisor = await loginApi(supervisorCredentials!);
+    const supervisorHeaders = authHeaders(supervisor.cookie) ?? {};
+    const finance = await loginApi(financeCredentials!);
+    const financeHeaders = authHeaders(finance.cookie) ?? {};
+    const marker = `Playwright QA outlet purchase ${Date.now()}`;
+
+    try {
+      const [locations, items] = await Promise.all([
+        supervisor.api.get("locations?limit=200", { headers: supervisorHeaders })
+          .then(async (response) => rowsFromPayload<Location>(await response.json())),
+        supervisor.api.get("items?page=1&limit=100", { headers: supervisorHeaders })
+          .then(async (response) => rowsFromPayload<{ id: string }>(await response.json())),
+      ]);
+      const source = locations.find((location) => location.location_type !== "OUTLET" && location.warehouse_id);
+      const outlet = locations.find((location) => location.location_type === "OUTLET" && location.warehouse_id);
+      test.skip(!source || !outlet || items.length === 0, "QA data needs a warehouse location, outlet, and item");
+
+      const transferResponse = await supervisor.api.post("transfers", {
+        headers: supervisorHeaders,
+        data: {
+          source_warehouse_id: source!.warehouse_id,
+          destination_warehouse_id: outlet!.warehouse_id,
+          source_location_id: source!.id,
+          destination_location_id: outlet!.id,
+          remarks: marker,
+          items: [{ item_id: items[0].id, qty_requested: 1 }],
+        },
+      });
+      const transfer = await payload<{ id: string; status: string }>(transferResponse);
+      expect(transfer.status).toBe("DRAFT");
+      const requestResponse = await supervisor.api.post(`transfers/${transfer.id}/request`, {
+        headers: supervisorHeaders,
+        data: { remarks: marker },
+      });
+      expect((await payload<{ status: string }>(requestResponse)).status).toBe("REQUESTED");
+
+      const purchaseResponse = await supervisor.api.post("finance/daily-purchases", {
+        headers: supervisorHeaders,
+        data: {
+          purchase_date: new Date().toISOString().slice(0, 10),
+          outlet_id: outlet!.id,
+          vendor_name: marker,
+          total_amount: 1000,
+          items: [{ item_name: marker, qty: 1, unit: "pcs", unit_price: 1000, subtotal: 1000, category: "QA" }],
+        },
+      });
+      const purchase = await payload<DailyPurchase>(purchaseResponse);
+      expect(purchase.status).toBe("NEEDS_REVIEW");
+
+      const financeRows = await finance.api.get("finance/daily-purchases?limit=100", { headers: financeHeaders })
+        .then(async (response) => rowsFromPayload<DailyPurchase>(await response.json()));
+      expect(financeRows.some((row) => row.id === purchase.id && row.outlet_id === outlet!.id)).toBe(true);
+      console.log(`Retained QA request ${transfer.id} and purchase report ${purchase.id}`);
+    } finally {
+      await Promise.all([supervisor.api.dispose(), finance.api.dispose()]);
+    }
+  });
+
+  test("warehouse completes a no-difference stocktake without changing stock", async () => {
+    test.skip(!allowMutation, "Set WMS_ALLOW_MUTATION=true only for the approved QA database");
+    const credentials = credentialsFor("warehouse");
+    test.skip(!credentials, missingCredentialsMessage("warehouse"));
+    const { api, cookie } = await loginApi(credentials!);
+    const headers = authHeaders(cookie) ?? {};
+
+    try {
+      const locations = await api.get("locations?location_type=BIN&limit=100", { headers })
+        .then(async (response) => rowsFromPayload<Location>(await response.json()));
+      test.skip(locations.length === 0, "QA data needs an active warehouse bin location");
+      const createResponse = await api.post("stocks/opnames", {
+        headers,
+        data: { location_id: locations[0].id },
+      });
+      const stocktake = await payload<{ id: string; stocktake_items: Array<{ item_id: string; expected_quantity: number | string }> }>(createResponse);
+      const completeResponse = await api.post(`stocks/opnames/${stocktake.id}/complete`, {
+        headers,
+        data: {
+          counts: stocktake.stocktake_items.map((item) => ({
+            item_id: item.item_id,
+            counted_quantity: Number(item.expected_quantity),
+          })),
+        },
+      });
+      const completed = await payload<{ status: string; stocktake_items: Array<{ counted_quantity: number | string }> }>(completeResponse);
+      expect(completed.status).toBe("COMPLETED");
+      expect(completed.stocktake_items.every((item) => item.counted_quantity !== null)).toBe(true);
+      console.log(`Retained QA stocktake ${stocktake.id}; stock balances remain unchanged`);
+    } finally {
+      await api.dispose();
+    }
+  });
+
   test("finance records and reads a standalone payment entry", async () => {
     test.skip(
       !allowMutation,

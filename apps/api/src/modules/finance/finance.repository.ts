@@ -2,6 +2,7 @@ import { supabase } from "../../config/supabase";
 
 export type FinanceTransactionPayload = {
   transaction_date: string;
+  outlet_id?: string | null;
   type: "INCOME" | "EXPENSE";
   category: string;
   description?: string | null;
@@ -31,6 +32,7 @@ export type DailyPurchasePayload = {
   status?: "DRAFT_AI" | "NEEDS_REVIEW";
   total_amount: number;
   reviewed_by?: string | null;
+  submitted_by?: string | null;
   items: DailyPurchaseItemPayload[];
 };
 
@@ -45,7 +47,7 @@ export class FinanceRepository {
 
     let query = supabase
       .from("finance_transactions")
-      .select("*")
+      .select("*, outlet:outlet_id(code,name)")
       .order("transaction_date", {
         ascending: false,
       })
@@ -81,6 +83,16 @@ export class FinanceRepository {
     if (error) throw error;
 
     return data;
+  }
+
+  async findLocationsByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from("locations")
+      .select("id,code,name")
+      .in("id", ids);
+    if (error) throw error;
+    return data ?? [];
   }
 
   async update(
@@ -173,6 +185,7 @@ export class FinanceRepository {
   async findDailyPurchases(params?: {
     status?: string;
     limit?: number;
+    submittedBy?: string;
   }) {
     const limit = params?.limit ?? 100;
 
@@ -196,6 +209,10 @@ export class FinanceRepository {
 
     if (params?.status) {
       query = query.eq("status", params.status);
+    }
+
+    if (params?.submittedBy) {
+      query = query.eq("submitted_by", params.submittedBy);
     }
 
     const { data, error } = await query;
@@ -313,7 +330,7 @@ export class FinanceRepository {
   }) {
     const { data, error } = await supabase
       .from("finance_transactions")
-      .select("*")
+      .select("*, outlet:outlet_id(code,name)")
       .gte("transaction_date", params.dateFrom)
       .lte("transaction_date", params.dateTo)
       .order("transaction_date", {

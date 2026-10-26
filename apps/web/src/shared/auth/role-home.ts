@@ -19,6 +19,10 @@ export function getHomePathForRole(role?: string | null) {
     return "/dashboard/transfers";
   }
 
+  if (normalizedRole === "SUPERVISOR") {
+    return "/dashboard/transfers";
+  }
+
   return "/dashboard";
 }
 
@@ -27,6 +31,18 @@ export function canAccessPathForRole(
   path: string | null | undefined,
 ) {
   if (!path || !role) return false;
+
+  const normalizedRole = normalizeRole(role);
+  const roleRoutes: Record<string, string[]> = {
+    WAREHOUSE: ["/dashboard/transfers", "/dashboard/stock", "/dashboard/stock-opname", "/dashboard/purchase-orders"],
+    FINANCE: ["/dashboard/finance"],
+    SUPERVISOR: ["/dashboard/transfers", "/dashboard/stock", "/dashboard/purchase-orders", "/dashboard/daily-purchases"],
+    CASHIER: ["/dashboard/transfers"],
+    OPERATOR: ["/dashboard/transfers"],
+  };
+  if (normalizedRole in roleRoutes) {
+    return roleRoutes[normalizedRole].some((route) => path === route || path.startsWith(`${route}/`));
+  }
 
   if (path === "/" || path === "/login") return true;
 

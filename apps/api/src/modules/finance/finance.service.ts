@@ -37,6 +37,8 @@ type DailyPurchaseItemRow = {
 
 type ReportTransactionRow = {
   transaction_date?: string | null;
+  outlet_id?: string | null;
+  outlet?: { code?: string | null; name?: string | null } | null;
   type?: string | null;
   category?: string | null;
   description?: string | null;
@@ -58,6 +60,7 @@ type ReportSaleRow = {
 
 type ReportPurchaseRow = {
   purchase_date?: string | null;
+  outlet?: { code?: string | null; name?: string | null } | null;
   vendor_name?: string | null;
   status?: string | null;
   total_amount?: number | string | null;
@@ -73,6 +76,10 @@ type ReportSettlementRow = {
   calculated_expected_cash?: number | string | null;
   actual_cash?: number | string | null;
   cash_difference?: number | string | null;
+  total_expenses?: number | string | null;
+  total_deposits?: number | string | null;
+  location_id?: string | null;
+  location?: { code?: string | null; name?: string | null } | null;
 };
 
 function cleanPayload(
@@ -95,6 +102,7 @@ function cleanPayload(
   return {
     transaction_date:
       payload.transaction_date || new Date().toISOString().slice(0, 10),
+    outlet_id: payload.outlet_id || null,
     type,
     category,
     description: payload.description?.trim() || null,
@@ -393,9 +401,10 @@ function buildDailySheets(params: {
       const income = transactions
         .filter((row) => row.type === "INCOME")
         .reduce((sum, row) => sum + numberValue(row.amount), 0);
+      const shiftExpenses = settlements.reduce((sum, row) => sum + numberValue(row.total_expenses), 0);
       const expense = transactions
         .filter((row) => row.type === "EXPENSE")
-        .reduce((sum, row) => sum + numberValue(row.amount), 0);
+        .reduce((sum, row) => sum + numberValue(row.amount), 0) + shiftExpenses;
       const cashSales = sales.reduce(
         (sum, sale) => sum + paymentTotal(sale, "CASH"),
         0,
@@ -419,9 +428,10 @@ function buildDailySheets(params: {
           ["Daily Purchases", purchases.length],
         ]),
         ...section("Transactions", [
-          ["Date", "Type", "Category", "Description", "Amount", "Payment"],
+          ["Date", "Outlet", "Type", "Category", "Description", "Amount", "Payment"],
           ...transactions.map((row) => [
             row.transaction_date ?? "",
+            row.outlet?.name || row.outlet?.code || "Semua outlet",
             row.type ?? "",
             row.category ?? "",
             row.description ?? "",
@@ -442,7 +452,7 @@ function buildDailySheets(params: {
           ]),
         ]),
         ...section("Daily Purchases", [
-          ["Date", "Vendor", "Status", "Total", "Edited Items"],
+          ["Date", "Outlet", "Vendor", "Status", "Total", "Edited Items"],
           ...purchases.map((row) => {
             const items = Array.isArray(row.daily_purchase_items)
               ? row.daily_purchase_items
@@ -450,6 +460,7 @@ function buildDailySheets(params: {
 
             return [
               row.purchase_date ?? "",
+              row.outlet?.name || row.outlet?.code || "-",
               row.vendor_name ?? "",
               row.status ?? "",
               numberValue(row.total_amount),
@@ -458,12 +469,15 @@ function buildDailySheets(params: {
           }),
         ]),
         ...section("Cashier Settlement", [
-          ["Session", "Shift", "Status", "Sales", "Expected", "Actual", "Diff"],
+          ["Outlet", "Session", "Shift", "Status", "Sales", "Expenses", "Deposits", "Expected", "Actual", "Diff"],
           ...settlements.map((row) => [
+            row.location?.name || row.location?.code || row.location_id || "",
             row.session_no ?? "",
             row.shift_name ?? "",
             row.status ?? "",
             numberValue(row.total_sales),
+            numberValue(row.total_expenses),
+            numberValue(row.total_deposits),
             numberValue(row.calculated_expected_cash),
             row.actual_cash ?? "",
             row.cash_difference ?? "",
@@ -545,6 +559,7 @@ export class FinanceService {
   async getDailyPurchases(params?: {
     status?: string;
     limit?: number;
+    submittedBy?: string;
   }) {
     return financeRepository.findDailyPurchases(params);
   }
@@ -556,7 +571,8 @@ export class FinanceService {
     return financeRepository.createDailyPurchase(
       cleanDailyPurchasePayload({
         ...payload,
-        reviewed_by: userId,
+        submitted_by: userId,
+        status: "NEEDS_REVIEW",
       }),
     );
   }
@@ -589,6 +605,7 @@ export class FinanceService {
 
     const transaction = await financeRepository.create({
       transaction_date: batch.purchase_date,
+      outlet_id: batch.outlet_id ?? null,
       type: "EXPENSE",
       category: "Daily Store Purchase",
       description:
@@ -610,6 +627,32 @@ export class FinanceService {
     sync_google?: boolean;
   }) {
     const { dateFrom, dateTo } = normalizeMonth(params.month);
+    return this.generateReport({
+      date_from: dateFrom,
+      date_to: dateTo,
+      period: params.month,
+      sync_google: params.sync_google,
+    });
+  }
+
+  async generateReport(params: {
+    date_from: string;
+    date_to: string;
+    period?: string;
+    sync_google?: boolean;
+  }) {
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!datePattern.test(params.date_from) || !datePattern.test(params.date_to)) {
+      throw new BadRequestError("Report dates must use YYYY-MM-DD format");
+    }
+    const fromDate = new Date(`${params.date_from}T00:00:00Z`);
+    const toDate = new Date(`${params.date_to}T00:00:00Z`);
+    const dayCount = Math.floor((toDate.getTime() - fromDate.getTime()) / 86_400_000) + 1;
+    if (!Number.isFinite(dayCount) || dayCount < 1 || dayCount > 31) {
+      throw new BadRequestError("Report period must contain between 1 and 31 days");
+    }
+    const dateFrom = params.date_from;
+    const dateTo = params.date_to;
     const [transactions, sales, purchases, settlements] =
       await Promise.all([
         financeRepository.findReportTransactions({
@@ -629,12 +672,25 @@ export class FinanceService {
         }),
       ]);
 
+    const locationIds = [...new Set(settlements.map((row) => String(row.location_id ?? "")).filter(Boolean))];
+    const settlementLocations = await financeRepository.findLocationsByIds(locationIds);
+    const locationById = new Map(settlementLocations.map((location) => [location.id, location]));
+    const settlementsWithLocation = settlements.map((row) => ({
+      ...row,
+      location: locationById.get(String(row.location_id ?? "")) ?? null,
+    }));
+
     const income = transactions
       .filter((row) => row.type === "INCOME")
       .reduce((sum, row) => sum + numberValue(row.amount), 0);
+    const reportSettlements = settlementsWithLocation.filter((row) => {
+      const openedAt = String(row.opened_at ?? "").slice(0, 10);
+      return openedAt >= dateFrom && openedAt <= dateTo;
+    });
     const expense = transactions
       .filter((row) => row.type === "EXPENSE")
-      .reduce((sum, row) => sum + numberValue(row.amount), 0);
+      .reduce((sum, row) => sum + numberValue(row.amount), 0) +
+      reportSettlements.reduce((sum, row) => sum + numberValue(row.total_expenses), 0);
     const cashSales = sales.reduce((sum, sale) => {
       const payments: SalePaymentRow[] = Array.isArray(sale.sale_payments)
         ? sale.sale_payments
@@ -668,12 +724,6 @@ export class FinanceService {
       );
     }, 0);
 
-    const reportSettlements = settlements.filter((row) => {
-      const openedAt = String(row.opened_at ?? "").slice(0, 10);
-
-      return openedAt >= dateFrom && openedAt <= dateTo;
-    });
-
     const sheets = buildDailySheets({
       dateFrom,
       dateTo,
@@ -685,7 +735,7 @@ export class FinanceService {
 
     // A transient failure while syncing to Google Sheets (expired
     // credentials, rate limiting, a network blip) must not take
-    // down the whole monthly report — the report data above is
+    // down the report — the report data above is
     // already computed and should still be returned to the user,
     // with the sync failure reported alongside it instead of
     // thrown as a 500/400 for the whole request.
@@ -705,7 +755,8 @@ export class FinanceService {
         };
 
     return {
-      month: params.month,
+      period: params.period ?? `${dateFrom} to ${dateTo}`,
+      month: /^\d{4}-\d{2}$/.test(params.period ?? "") ? params.period : undefined,
       date_from: dateFrom,
       date_to: dateTo,
       summary: {

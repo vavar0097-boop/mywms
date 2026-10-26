@@ -237,9 +237,9 @@ export function PurchaseOrdersPage() {
           await Promise.all([
             masterDataService.getItems(),
             masterDataService.getLocations(),
-            masterDataPageService.getVendors({
-              limit: 200,
-            }),
+            canWrite
+              ? masterDataPageService.getVendors({ limit: 200 })
+              : Promise.resolve([]),
           ]);
 
         setItems(itemResult);
@@ -268,7 +268,7 @@ export function PurchaseOrdersPage() {
     }
 
     loadMasterData();
-  }, []);
+  }, [canWrite]);
 
   const loadPurchaseOrders = useCallback(async () => {
     try {

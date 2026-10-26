@@ -26,8 +26,8 @@ page and API health/CORS. Run these checks directly with:
 npm run test:smoke
 ```
 
-To enable authenticated tests, fill all five role credentials in `.env`. The
-`setup` project logs in as admin, owner, finance, warehouse, and cashier, writes
+To enable authenticated tests, fill all six role credentials in `.env`. The
+`setup` project logs in as admin, owner, finance, warehouse, supervisor, and cashier, writes
 session files into `.auth/`, and then the Firefox tests reuse those sessions.
 Run the complete configured suite with:
 

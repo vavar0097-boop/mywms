@@ -10,6 +10,7 @@ type Props = {
   loadingAction: TransferAction | null;
   onAction: (action: TransferAction) => void;
   canManage: boolean;
+  canRequest: boolean;
   canReceive: boolean;
 };
 
@@ -18,12 +19,13 @@ export function TransferActionButtons({
   loadingAction,
   onAction,
   canManage,
+  canRequest,
   canReceive,
 }: Props) {
   const isBusy = Boolean(loadingAction);
 
   if (status === "DRAFT") {
-    if (!canManage) return <TransferWaitingMessage message="Menunggu gudang mengajukan transfer." />;
+    if (!canManage && !canRequest) return <TransferWaitingMessage message="Menunggu petugas gudang mengajukan transfer." />;
 
     return (
       <div className="flex flex-wrap gap-2">
@@ -36,15 +38,13 @@ export function TransferActionButtons({
             : "Request"}
         </Button>
 
-        <Button
+        {canManage ? <Button
           variant="danger"
           disabled={isBusy}
           onClick={() => onAction("cancel")}
         >
-          {loadingAction === "cancel"
-            ? "Cancelling..."
-            : "Cancel"}
-        </Button>
+          {loadingAction === "cancel" ? "Cancelling..." : "Cancel"}
+        </Button> : null}
       </div>
     );
   }

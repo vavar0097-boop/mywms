@@ -13,11 +13,16 @@ import {
   CardTitle,
 } from "@/shared/ui/card/card";
 import { toast } from "@/shared/ui/toast";
+import { PERMISSIONS, hasPermission } from "@/shared/auth/permissions";
+import { useAuthStore } from "@/stores/auth.store";
 
 import { TransferStatusBadge } from "../components/TransferStatusBadge";
 import { useTransferStore } from "../stores/transfer.store";
 
 export function TransferListPage() {
+  const role = useAuthStore((state) => state.user?.role);
+  const canCreate = hasPermission(role, PERMISSIONS.TRANSFERS_WRITE);
+  const isCashier = hasPermission(role, PERMISSIONS.CASHIER_SESSIONS_READ);
   const [query, setQuery] = useState("");
 
   const {
@@ -100,6 +105,7 @@ export function TransferListPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {isCashier ? <Link to="/pos" className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold">Kembali ke Kasir</Link> : null}
           <Button
             variant="outline"
             onClick={handleRefresh}
@@ -109,13 +115,13 @@ export function TransferListPage() {
             {loadingList ? "Refreshing..." : "Refresh"}
           </Button>
 
-          <Link
+          {canCreate ? <Link
             to="/dashboard/transfers/new"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-950 bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
           >
             <Plus size={16} />
             New Transfer
-          </Link>
+          </Link> : null}
         </div>
       </div>
 

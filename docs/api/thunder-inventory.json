@@ -1,0 +1,218 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Inventory",
+  "dateExported": "2026-10-26T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-inventory",
+      "name": "Inventory"
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-stock-current",
+      "colId": "enterprise-wms-api",
+      "name": "Current Stock",
+      "url": "{{baseUrl}}/api/stocks/current",
+      "method": "GET",
+      "sortNum": 40,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-stock-ledgers",
+      "colId": "enterprise-wms-api",
+      "name": "Stock Ledgers",
+      "url": "{{baseUrl}}/api/stocks/ledgers",
+      "method": "GET",
+      "sortNum": 41,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-stock-initial",
+      "colId": "enterprise-wms-api",
+      "name": "Create Initial Stock",
+      "url": "{{baseUrl}}/api/stocks/initial",
+      "method": "POST",
+      "sortNum": 42,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-stock-adjust",
+      "colId": "enterprise-wms-api",
+      "name": "Stock Adjustment",
+      "url": "{{baseUrl}}/api/stocks/adjustment",
+      "method": "POST",
+      "sortNum": 43,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-list",
+      "colId": "enterprise-wms-api",
+      "name": "List Transfers",
+      "url": "{{baseUrl}}/api/transfers",
+      "method": "GET",
+      "sortNum": 44,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-detail",
+      "colId": "enterprise-wms-api",
+      "name": "Get Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}",
+      "method": "GET",
+      "sortNum": 45,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-create",
+      "colId": "enterprise-wms-api",
+      "name": "Create Transfer",
+      "url": "{{baseUrl}}/api/transfers",
+      "method": "POST",
+      "sortNum": 46,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-request",
+      "colId": "enterprise-wms-api",
+      "name": "Request Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}/request",
+      "method": "POST",
+      "sortNum": 47,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-pick",
+      "colId": "enterprise-wms-api",
+      "name": "Pick Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}/pick",
+      "method": "POST",
+      "sortNum": 48,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-dispatch",
+      "colId": "enterprise-wms-api",
+      "name": "Dispatch Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}/dispatch",
+      "method": "POST",
+      "sortNum": 49,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-receive",
+      "colId": "enterprise-wms-api",
+      "name": "Receive Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}/receive",
+      "method": "POST",
+      "sortNum": 50,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-inventory"
+    },
+    {
+      "_id": "req-transfers-cancel",
+      "colId": "enterprise-wms-api",
+      "name": "Cancel Transfer",
+      "url": "{{baseUrl}}/api/transfers/{{id}}/cancel",
+      "method": "POST",
+      "sortNum": 51,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-inventory"
+    }
+  ]
+}

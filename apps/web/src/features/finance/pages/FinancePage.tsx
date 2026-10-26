@@ -9,10 +9,13 @@ import {
   Search,
   Trash2,
   X,
+  Download,
+  Printer,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 import { getApiErrorMessage } from "@/shared/lib/api/error";
+import { masterDataService } from "@/features/transfers/services/master-data.service";
 import { toast } from "@/shared/ui/toast";
 import {
   FinancePayload,
@@ -28,6 +31,7 @@ import {
 
 type FinanceForm = {
   transaction_date: string;
+  outlet_id: string;
   type: "INCOME" | "EXPENSE";
   category: string;
   description: string;
@@ -47,8 +51,44 @@ type PurchaseForm = {
 
 const today = new Date().toISOString().slice(0, 10);
 
+function isoWeekRange(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00Z`);
+  const weekday = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - weekday);
+  const dateFrom = date.toISOString().slice(0, 10);
+  date.setUTCDate(date.getUTCDate() + 6);
+  return { date_from: dateFrom, date_to: date.toISOString().slice(0, 10) };
+}
+
+function exportFinanceReport(report: MonthlyReport) {
+  const rows: unknown[][] = [
+    ["Periode", report.period ?? report.month ?? ""],
+    ["Dari", report.date_from ?? ""],
+    ["Sampai", report.date_to ?? ""],
+    ["Pemasukan", report.summary.income],
+    ["Pengeluaran", report.summary.expense],
+    ["Saldo", report.summary.balance],
+    ["Penjualan tunai", report.summary.cash_sales],
+    ["Penjualan non-tunai", report.summary.noncash_sales],
+    [],
+  ];
+  for (const [sheetName, sheetRows] of Object.entries(report.sheets ?? {})) {
+    rows.push([sheetName]);
+    rows.push(...sheetRows);
+    rows.push([]);
+  }
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `laporan-keuangan-${report.date_from ?? ""}-${report.date_to ?? ""}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 const emptyForm: FinanceForm = {
   transaction_date: today,
+  outlet_id: "",
   type: "INCOME",
   category: "",
   description: "",
@@ -82,6 +122,7 @@ function numericValue(value: unknown) {
 function toPayload(form: FinanceForm): FinancePayload {
   return {
     transaction_date: form.transaction_date,
+    outlet_id: form.outlet_id || null,
     type: form.type,
     category: form.category.trim(),
     description: form.description.trim() || null,
@@ -91,6 +132,7 @@ function toPayload(form: FinanceForm): FinancePayload {
 }
 
 export function FinancePage() {
+  const [outlets, setOutlets] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [settlements, setSettlements] = useState<CashierSettlement[]>([]);
   const [posSales, setPosSales] = useState<PosSaleFinanceRow[]>([]);
@@ -116,9 +158,19 @@ export function FinancePage() {
   const [isParsingPurchase, setIsParsingPurchase] = useState(false);
   const [isSavingPurchase, setIsSavingPurchase] = useState(false);
   const [reportMonth, setReportMonth] = useState(today.slice(0, 7));
+  const [reportMode, setReportMode] = useState<"weekly" | "monthly">("weekly");
+  const [reportWeekDate, setReportWeekDate] = useState(today);
   const [syncGoogle, setSyncGoogle] = useState(false);
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  useEffect(() => {
+    masterDataService.getLocations()
+      .then((locations) => setOutlets(locations
+        .filter((location) => location.level?.toUpperCase() === "OUTLET")
+        .map((location) => ({ id: location.id, code: location.code, name: location.name }))))
+      .catch(() => setOutlets([]));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -189,6 +241,7 @@ export function FinancePage() {
     setEditing(row);
     setForm({
       transaction_date: row.transaction_date,
+      outlet_id: row.outlet_id || "",
       type: row.type,
       category: row.category,
       description: row.description || "",
@@ -442,16 +495,17 @@ export function FinancePage() {
   }
 
   async function handleGenerateReport() {
-    if (!reportMonth) {
-      toast.error("Report month required");
-      return;
-    }
+    if ((reportMode === "weekly" && !reportWeekDate) || (reportMode === "monthly" && !reportMonth)) return;
+    const range = reportMode === "weekly"
+      ? isoWeekRange(reportWeekDate)
+      : { date_from: `${reportMonth}-01`, date_to: new Date(Date.UTC(Number(reportMonth.slice(0, 4)), Number(reportMonth.slice(5, 7)), 0)).toISOString().slice(0, 10) };
 
     setIsGeneratingReport(true);
 
     try {
-      const nextReport = await financeService.generateMonthlyReport({
-        month: reportMonth,
+      const nextReport = await financeService.generateReport({
+        ...range,
+        period: reportMode === "weekly" ? "Mingguan" : reportMonth,
         sync_google: syncGoogle,
       });
 
@@ -469,6 +523,7 @@ export function FinancePage() {
 
   return (
     <div className="space-y-6">
+      <style>{`@media print { body * { visibility: hidden !important; } #finance-report-output, #finance-report-output * { visibility: visible !important; } #finance-report-output { position: absolute; inset: 0; width: 100%; } .print-hide { display: none !important; } }`}</style>
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-950">
@@ -717,7 +772,7 @@ export function FinancePage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-slate-950">
-                Monthly Report
+                {reportMode === "weekly" ? "Weekly Report" : "Monthly Report"}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
                 Generate owner/finance report.
@@ -726,13 +781,11 @@ export function FinancePage() {
             <FileSpreadsheet className="text-slate-400" size={22} />
           </div>
           <div className="mt-4 space-y-3">
-            <input
-              type="month"
-              value={reportMonth}
-              onChange={(event) => setReportMonth(event.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
-              required
-            />
+            <select value={reportMode} onChange={(event) => setReportMode(event.target.value as "weekly" | "monthly")} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm">
+              <option value="weekly">Mingguan</option>
+              <option value="monthly">Bulanan</option>
+            </select>
+            {reportMode === "weekly" ? <input type="date" value={reportWeekDate} onChange={(event) => setReportWeekDate(event.target.value)} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none" required /> : <input type="month" value={reportMonth} onChange={(event) => setReportMonth(event.target.value)} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none" required />}
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <input
                 type="checkbox"
@@ -752,7 +805,12 @@ export function FinancePage() {
           </div>
 
           {report ? (
-            <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
+            <div id="finance-report-output" className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
+              <div className="print-hide flex gap-2">
+                <button type="button" onClick={() => exportFinanceReport(report)} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold"><Download size={15} /> Export Excel (CSV)</button>
+                <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold"><Printer size={15} /> Cetak</button>
+              </div>
+              <p><strong>Periode:</strong> {report.date_from} – {report.date_to}</p>
               <div className="flex justify-between">
                 <span>Income</span>
                 <strong>{money(report.summary.income)}</strong>
@@ -799,7 +857,7 @@ export function FinancePage() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                {["Date", "Vendor", "Status", "Total", "Actions"].map(
+                {["Date", "Outlet", "Vendor", "Status", "Total", "Actions"].map(
                   (head) => (
                     <th
                       key={head}
@@ -815,7 +873,7 @@ export function FinancePage() {
               {dailyPurchases.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-5 py-8 text-center text-sm text-slate-500"
                   >
                     No daily purchase files yet.
@@ -826,6 +884,9 @@ export function FinancePage() {
                   <tr key={row.id}>
                     <td className="px-5 py-4 text-sm">
                       {row.purchase_date}
+                    </td>
+                    <td className="px-5 py-4 text-sm">
+                      {outlets.find((outlet) => outlet.id === row.outlet_id)?.name || "-"}
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold">
                       {row.vendor_name || "-"}
@@ -882,7 +943,7 @@ export function FinancePage() {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  {["Session", "Sales", "Expected", "Actual", "Diff"].map(
+                  {["Outlet", "Session / Shift", "Sales", "Expenses", "Deposits", "Expected", "Actual", "Diff"].map(
                     (head) => (
                       <th
                         key={head}
@@ -898,7 +959,7 @@ export function FinancePage() {
                 {settlements.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={8}
                       className="px-4 py-8 text-center text-sm text-slate-500"
                     >
                       No cashier shifts yet.
@@ -907,6 +968,7 @@ export function FinancePage() {
                 ) : (
                   settlements.map((row) => (
                     <tr key={row.cashier_session_id}>
+                      <td className="px-4 py-3 text-sm font-medium">{outlets.find((outlet) => outlet.id === row.location_id)?.name || "-"}</td>
                       <td className="px-4 py-3">
                         <p className="text-sm font-bold text-slate-950">
                           {row.session_no}
@@ -918,6 +980,8 @@ export function FinancePage() {
                       <td className="px-4 py-3 text-sm font-semibold">
                         {money(row.total_sales)}
                       </td>
+                      <td className="px-4 py-3 text-sm">{money(row.total_expenses)}</td>
+                      <td className="px-4 py-3 text-sm">{money(row.total_deposits)}</td>
                       <td className="px-4 py-3 text-sm">
                         {money(row.calculated_expected_cash)}
                       </td>
@@ -1058,7 +1122,7 @@ export function FinancePage() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                {["Date", "Type", "Category", "Amount", "Payment", "Actions"].map(
+                {["Date", "Type", "Category", "Outlet", "Amount", "Payment", "Actions"].map(
                   (head) => (
                     <th
                       key={head}
@@ -1073,13 +1137,13 @@ export function FinancePage() {
             <tbody className="divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
                     Loading finance...
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
                     No finance transactions found.
                   </td>
                 </tr>
@@ -1099,6 +1163,9 @@ export function FinancePage() {
                       <p className="mt-1 text-xs text-slate-500">
                         {row.description || "No description"}
                       </p>
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                      {row.outlet?.name || row.outlet?.code || "Semua outlet"}
                     </td>
                     <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-950">
                       {money(row.amount)}
@@ -1164,6 +1231,10 @@ export function FinancePage() {
                   className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none"
                   required
                 />
+                <select value={form.outlet_id} onChange={(event) => setForm((current) => ({ ...current, outlet_id: event.target.value }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none">
+                  <option value="">Semua outlet</option>
+                  {outlets.map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.code} — {outlet.name}</option>)}
+                </select>
                 <select
                   value={form.type}
                   onChange={(event) =>

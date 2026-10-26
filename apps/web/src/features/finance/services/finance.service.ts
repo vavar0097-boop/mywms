@@ -5,6 +5,8 @@ type UnknownRecord = Record<string, unknown>;
 export type FinanceTransaction = {
   id: string;
   transaction_date: string;
+  outlet_id?: string | null;
+  outlet?: { code?: string | null; name?: string | null } | null;
   type: "INCOME" | "EXPENSE";
   category: string;
   description?: string | null;
@@ -17,6 +19,7 @@ export type CashierSettlement = {
   session_no: string;
   cashier_id: string;
   location_id: string;
+  location?: { code?: string | null; name?: string | null } | null;
   shift_name: string;
   status: string;
   opened_at: string;
@@ -113,7 +116,10 @@ export type DailyPurchasePayload = {
 };
 
 export type MonthlyReport = {
-  month: string;
+  month?: string;
+  period?: string;
+  date_from?: string;
+  date_to?: string;
   summary: {
     income: number;
     expense: number;
@@ -142,6 +148,7 @@ export type FinanceSummary = {
 
 export type FinancePayload = {
   transaction_date: string;
+  outlet_id?: string | null;
   type: "INCOME" | "EXPENSE";
   category: string;
   description?: string | null;
@@ -319,6 +326,16 @@ export const financeService = {
       payload,
     );
 
+    return unwrap(response.data) as MonthlyReport;
+  },
+
+  async generateReport(payload: {
+    date_from: string;
+    date_to: string;
+    period: string;
+    sync_google: boolean;
+  }) {
+    const response = await apiClient.post("/finance/report", payload);
     return unwrap(response.data) as MonthlyReport;
   },
 };

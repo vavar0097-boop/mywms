@@ -58,6 +58,7 @@ export function TransferDetailPage() {
   const { id } = useParams<{ id: string }>();
   const role = useAuthStore((state) => state.user?.role);
   const canManage = hasPermission(role, PERMISSIONS.TRANSFERS_ACTION);
+  const canRequest = hasPermission(role, PERMISSIONS.TRANSFERS_REQUEST);
   const canReceive =
     canManage || hasPermission(role, PERMISSIONS.TRANSFERS_RECEIVE);
 
@@ -178,6 +179,7 @@ export function TransferDetailPage() {
             loadingAction={actionLoading}
             onAction={handleAction}
             canManage={canManage}
+            canRequest={canRequest}
             canReceive={canReceive}
           />
         </div>

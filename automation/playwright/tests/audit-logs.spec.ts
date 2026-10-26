@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { storageStatePath } from "../src/env";
 
 test.describe("audit logs", () => {
-  test.use({ storageState: storageStatePath("finance") });
+  test.use({ storageState: storageStatePath("admin") });
 
   test("audit log page renders real table shell", async ({ page }) => {
     await page.goto("/dashboard/audit-logs");

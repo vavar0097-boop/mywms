@@ -2,12 +2,14 @@ import {
   ArrowLeftRight,
   Boxes,
   ClipboardList,
+  ClipboardCheck,
   DollarSign,
   LayoutDashboard,
   MapPin,
   Package,
   PackagePlus,
   Truck,
+  Receipt,
   Settings,
   Sparkles,
   Users,
@@ -23,6 +25,7 @@ import {
   hasPermission,
 } from "@/shared/auth/permissions";
 import { useAuthStore } from "@/stores/auth.store";
+import { canAccessPathForRole } from "@/shared/auth/role-home";
 
 type SidebarItem = {
   label: string;
@@ -59,6 +62,13 @@ const sidebarItems: SidebarItem[] = [
     color: "bg-emerald-50 text-emerald-700",
   },
   {
+    label: "Stock Opname",
+    href: "/dashboard/stock-opname",
+    icon: ClipboardCheck,
+    permission: PERMISSIONS.STOCKTAKE_WRITE,
+    color: "bg-orange-50 text-orange-700",
+  },
+  {
     label: "Purchase Orders",
     href: "/dashboard/purchase-orders",
     icon: PackagePlus,
@@ -77,6 +87,13 @@ const sidebarItems: SidebarItem[] = [
     href: "/dashboard/finance",
     icon: DollarSign,
     permission: PERMISSIONS.FINANCE_READ,
+    color: "bg-amber-50 text-amber-700",
+  },
+  {
+    label: "Laporan Belanja Harian",
+    href: "/dashboard/daily-purchases",
+    icon: Receipt,
+    permission: PERMISSIONS.DAILY_PURCHASES_SUBMIT,
     color: "bg-amber-50 text-amber-700",
   },
   {
@@ -133,9 +150,11 @@ export function AppSidebar({
   onClose,
 }: AppSidebarProps) {
   const role = useAuthStore((state) => state.user?.role);
-  const visibleItems = sidebarItems.filter((item) =>
-    hasPermission(role, item.permission),
-  );
+  const visibleItems = ["CASHIER", "OPERATOR"].includes(role?.toUpperCase() ?? "")
+    ? []
+    : sidebarItems.filter((item) =>
+        hasPermission(role, item.permission) && canAccessPathForRole(role, item.href),
+      );
 
   return (
     <>

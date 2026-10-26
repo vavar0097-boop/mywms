@@ -8,6 +8,7 @@ export type RoleName =
   | "owner"
   | "finance"
   | "warehouse"
+  | "supervisor"
   | "cashier";
 
 const roleEnv: Record<RoleName, [string, string]> = {
@@ -15,6 +16,7 @@ const roleEnv: Record<RoleName, [string, string]> = {
   owner: ["WMS_OWNER_USERNAME", "WMS_OWNER_PASSWORD"],
   finance: ["WMS_FINANCE_USERNAME", "WMS_FINANCE_PASSWORD"],
   warehouse: ["WMS_WAREHOUSE_USERNAME", "WMS_WAREHOUSE_PASSWORD"],
+  supervisor: ["WMS_SUPERVISOR_USERNAME", "WMS_SUPERVISOR_PASSWORD"],
   cashier: ["WMS_CASHIER_USERNAME", "WMS_CASHIER_PASSWORD"],
 };
 
@@ -24,7 +26,7 @@ export const appUrl =
     : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 
 export const apiBaseUrl =
-  process.env.WMS_API_BASE_URL || "https://mywms-api.vercel.app";
+  process.env.WMS_API_BASE_URL || "https://mywms-six.vercel.app";
 
 export const reportMonth =
   process.env.WMS_REPORT_MONTH || currentJakartaMonth();

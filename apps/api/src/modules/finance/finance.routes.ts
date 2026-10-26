@@ -35,19 +35,19 @@ router.get(
 router.get(
   "/daily-purchases",
   authMiddleware,
-  permissionMiddleware(PERMISSIONS.FINANCE_READ),
+  permissionMiddleware(PERMISSIONS.FINANCE_READ, PERMISSIONS.DAILY_PURCHASES_SUBMIT),
   controller.getDailyPurchases.bind(controller),
 );
 router.post(
   "/daily-purchases/parse",
   authMiddleware,
-  permissionMiddleware(PERMISSIONS.FINANCE_WRITE),
+  permissionMiddleware(PERMISSIONS.FINANCE_WRITE, PERMISSIONS.DAILY_PURCHASES_SUBMIT),
   controller.parseDailyPurchase.bind(controller),
 );
 router.post(
   "/daily-purchases",
   authMiddleware,
-  permissionMiddleware(PERMISSIONS.FINANCE_WRITE),
+  permissionMiddleware(PERMISSIONS.FINANCE_WRITE, PERMISSIONS.DAILY_PURCHASES_SUBMIT),
   controller.createDailyPurchase.bind(controller),
 );
 router.put(
@@ -61,6 +61,12 @@ router.post(
   authMiddleware,
   permissionMiddleware(PERMISSIONS.FINANCE_WRITE),
   controller.approveDailyPurchase.bind(controller),
+);
+router.post(
+  "/report",
+  authMiddleware,
+  permissionMiddleware(PERMISSIONS.FINANCE_READ),
+  controller.generateReport.bind(controller),
 );
 router.post(
   "/monthly-report",

@@ -23,7 +23,7 @@ export function roleMiddleware(...allowedRoles: string[]) {
   };
 }
 
-export function permissionMiddleware(permission: Permission) {
+export function permissionMiddleware(...permissions: Permission[]) {
   return (
     req: AuthRequest,
     _res: Response,
@@ -31,7 +31,7 @@ export function permissionMiddleware(permission: Permission) {
   ) => {
     const role = req.user?.role;
 
-    if (!role || !roleHasPermission(role, permission)) {
+    if (!role || !permissions.some((permission) => roleHasPermission(role, permission))) {
       throw new ForbiddenError("Access denied");
     }
 

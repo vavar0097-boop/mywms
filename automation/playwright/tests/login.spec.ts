@@ -11,6 +11,7 @@ const nonAdminRoleHome: Record<Exclude<RoleName, "admin">, string> = {
   owner: "/dashboard",
   finance: "/dashboard/finance",
   warehouse: "/dashboard/transfers",
+  supervisor: "/dashboard/transfers",
   cashier: "/pos",
 };
 

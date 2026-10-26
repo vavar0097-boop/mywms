@@ -33,6 +33,8 @@ import {
 import { Input } from "@/shared/ui/input/input";
 import { Select } from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
+import { useAuthStore } from "@/stores/auth.store";
+import { PERMISSIONS, hasPermission } from "@/shared/auth/permissions";
 import { toast } from "@/shared/ui/toast";
 
 import { stockService } from "../services/stock.service";
@@ -93,6 +95,8 @@ function movementTone(movementType: string) {
 }
 
 export function StockPage() {
+  const role = useAuthStore((state) => state.user?.role);
+  const canRecordMovement = hasPermission(role, PERMISSIONS.STOCK_WRITE);
   const [view, setView] = useState<ViewMode>("current");
   const [currentStocks, setCurrentStocks] = useState<
     CurrentStock[]
@@ -416,7 +420,7 @@ export function StockPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className={`grid gap-6 ${canRecordMovement ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "grid-cols-1"}`}>
         <div className="space-y-6">
           <Card>
             <CardContent className="pt-6">
@@ -721,7 +725,7 @@ export function StockPage() {
           </Card>
         </div>
 
-        <Card className="h-fit">
+        {canRecordMovement ? <Card className="h-fit">
           <CardHeader>
             <CardTitle>Record Movement</CardTitle>
             <CardDescription>
@@ -891,7 +895,7 @@ export function StockPage() {
               </Button>
             </form>
           </CardContent>
-        </Card>
+        </Card> : null}
       </div>
     </div>
   );

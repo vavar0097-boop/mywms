@@ -1,0 +1,305 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "POS & Cashier",
+  "dateExported": "2026-10-26T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-pos",
+      "name": "POS & Cashier"
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-pos-outlets",
+      "colId": "enterprise-wms-api",
+      "name": "POS Outlets",
+      "url": "{{baseUrl}}/api/pos/outlets",
+      "method": "GET",
+      "sortNum": 70,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-pos-menu",
+      "colId": "enterprise-wms-api",
+      "name": "POS Menu",
+      "url": "{{baseUrl}}/api/pos/menu",
+      "method": "GET",
+      "sortNum": 71,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-pos-sale",
+      "colId": "enterprise-wms-api",
+      "name": "Create POS Sale",
+      "url": "{{baseUrl}}/api/pos/sales",
+      "method": "POST",
+      "sortNum": 72,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-pos-void",
+      "colId": "enterprise-wms-api",
+      "name": "Void POS Sale",
+      "url": "{{baseUrl}}/api/pos/sales/{{id}}/void",
+      "method": "POST",
+      "sortNum": 73,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-session-active",
+      "colId": "enterprise-wms-api",
+      "name": "Active Cashier Session",
+      "url": "{{baseUrl}}/api/cashier-sessions/active",
+      "method": "GET",
+      "sortNum": 74,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-session-open",
+      "colId": "enterprise-wms-api",
+      "name": "Open Cashier Session",
+      "url": "{{baseUrl}}/api/cashier-sessions/open",
+      "method": "POST",
+      "sortNum": 75,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-session-expense",
+      "colId": "enterprise-wms-api",
+      "name": "Create Cashier Expense",
+      "url": "{{baseUrl}}/api/cashier-sessions/expenses",
+      "method": "POST",
+      "sortNum": 76,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-session-deposit",
+      "colId": "enterprise-wms-api",
+      "name": "Create Cashier Deposit",
+      "url": "{{baseUrl}}/api/cashier-sessions/deposits",
+      "method": "POST",
+      "sortNum": 77,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-session-close",
+      "colId": "enterprise-wms-api",
+      "name": "Close Cashier Session",
+      "url": "{{baseUrl}}/api/cashier-sessions/{{id}}/close",
+      "method": "POST",
+      "sortNum": 78,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-list",
+      "colId": "enterprise-wms-api",
+      "name": "List POS Menu Settings",
+      "url": "{{baseUrl}}/api/settings/pos-menu",
+      "method": "GET",
+      "sortNum": 94,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-create",
+      "colId": "enterprise-wms-api",
+      "name": "Create POS Menu Item",
+      "url": "{{baseUrl}}/api/settings/pos-menu",
+      "method": "POST",
+      "sortNum": 95,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-update",
+      "colId": "enterprise-wms-api",
+      "name": "Update POS Menu Item",
+      "url": "{{baseUrl}}/api/settings/pos-menu/{{id}}",
+      "method": "PUT",
+      "sortNum": 96,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-bom",
+      "colId": "enterprise-wms-api",
+      "name": "Get POS Menu BOM",
+      "url": "{{baseUrl}}/api/settings/pos-menu/{{id}}/bom",
+      "method": "GET",
+      "sortNum": 97,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-bom-update",
+      "colId": "enterprise-wms-api",
+      "name": "Replace POS Menu BOM",
+      "url": "{{baseUrl}}/api/settings/pos-menu/{{id}}/bom",
+      "method": "PUT",
+      "sortNum": 98,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-pos"
+    },
+    {
+      "_id": "req-menu-delete",
+      "colId": "enterprise-wms-api",
+      "name": "Delete POS Menu Item",
+      "url": "{{baseUrl}}/api/settings/pos-menu/{{id}}",
+      "method": "DELETE",
+      "sortNum": 99,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-pos"
+    }
+  ]
+}

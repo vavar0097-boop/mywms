@@ -20,6 +20,8 @@ import { Input } from "@/shared/ui/input/input";
 import { Select } from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
 import { toast } from "@/shared/ui/toast";
+import { useAuthStore } from "@/stores/auth.store";
+import { PERMISSIONS, hasPermission } from "@/shared/auth/permissions";
 
 import { masterDataService } from "../services/master-data.service";
 import { useTransferStore } from "../stores/transfer.store";
@@ -52,7 +54,10 @@ function itemLabel(item: ItemOption) {
 
 export function CreateTransferPage() {
   const navigate = useNavigate();
-  const { createTransfer, creating } = useTransferStore();
+  const { createTransfer, runAction, creating } = useTransferStore();
+  const role = useAuthStore((state) => state.user?.role);
+  const submitAsRequest = hasPermission(role, PERMISSIONS.TRANSFERS_REQUEST) &&
+    !hasPermission(role, PERMISSIONS.TRANSFERS_ACTION);
 
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -294,10 +299,13 @@ export function CreateTransferPage() {
         })),
       });
 
-      toast.success(
-        "Transfer created",
-        "Draft transfer has been created successfully.",
-      );
+      if (submitAsRequest && transfer?.id) {
+        await runAction(transfer.id, "request");
+      }
+
+      toast.success(submitAsRequest ? "Permintaan terkirim" : "Transfer dibuat", submitAsRequest
+        ? "Gudang dapat menyiapkan barang yang diminta."
+        : "Draft transfer berhasil dibuat.");
 
       navigate(
         transfer?.id
@@ -325,16 +333,16 @@ export function CreateTransferPage() {
           </Link>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-950">
-            Create Transfer
+            {submitAsRequest ? "Request Barang ke Gudang" : "Create Transfer"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Create a draft transfer document before request,
-            pick, dispatch, and receive.
+            {submitAsRequest ? "Pilih gudang asal, outlet tujuan, dan barang yang perlu dikirim." : "Pick, dispatch, and receive warehouse transfers."}
           </p>
         </div>
 
         <Button type="submit" disabled={!canSubmit}>
-          {creating ? "Creating..." : "Create Draft"}
+          {creating ? "Creating..." : submitAsRequest ? "Kirim Request" : "Create Draft"}
         </Button>
       </div>
 

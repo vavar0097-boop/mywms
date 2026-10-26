@@ -40,6 +40,28 @@ test.describe("finance monthly report", () => {
     await api.dispose();
   });
 
+  test("API returns a seven-day report range", async () => {
+    const credentials = credentialsFor("finance");
+    test.skip(!credentials, missingCredentialsMessage("finance"));
+    const { api, cookie } = await loginApi(credentials!);
+    const end = new Date();
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - 6);
+    const dateFrom = start.toISOString().slice(0, 10);
+    const dateTo = end.toISOString().slice(0, 10);
+
+    const response = await api.post("finance/report", {
+      headers: authHeaders(cookie),
+      data: { date_from: dateFrom, date_to: dateTo, period: "Mingguan", sync_google: false },
+    });
+    expect(response.ok()).toBeTruthy();
+    const payload = await response.json();
+    expect(payload.data.date_from).toBe(dateFrom);
+    expect(payload.data.date_to).toBe(dateTo);
+    expect(Object.keys(payload.data.sheets ?? {}).length).toBeGreaterThan(0);
+    await api.dispose();
+  });
+
   test("Google sync writes daily sheets when enabled", async () => {
     test.skip(!syncGoogle, "Set WMS_SYNC_GOOGLE=true to verify Google sync");
 

@@ -1,0 +1,273 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Finance & Reports",
+  "dateExported": "2026-10-26T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-finance",
+      "name": "Finance & Reports"
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-fin-transactions",
+      "colId": "enterprise-wms-api",
+      "name": "Finance Transactions",
+      "url": "{{baseUrl}}/api/finance/transactions",
+      "method": "GET",
+      "sortNum": 80,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-summary",
+      "colId": "enterprise-wms-api",
+      "name": "Finance Summary",
+      "url": "{{baseUrl}}/api/finance/summary",
+      "method": "GET",
+      "sortNum": 81,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-settlements",
+      "colId": "enterprise-wms-api",
+      "name": "Cashier Settlements",
+      "url": "{{baseUrl}}/api/finance/cashier-settlements",
+      "method": "GET",
+      "sortNum": 82,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-pos",
+      "colId": "enterprise-wms-api",
+      "name": "Finance POS Sales",
+      "url": "{{baseUrl}}/api/finance/pos-sales",
+      "method": "GET",
+      "sortNum": 83,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-purchases",
+      "colId": "enterprise-wms-api",
+      "name": "Daily Purchases",
+      "url": "{{baseUrl}}/api/finance/daily-purchases",
+      "method": "GET",
+      "sortNum": 84,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-parse-purchase",
+      "colId": "enterprise-wms-api",
+      "name": "Parse Daily Purchase",
+      "url": "{{baseUrl}}/api/finance/daily-purchases/parse",
+      "method": "POST",
+      "sortNum": 85,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-create-purchase",
+      "colId": "enterprise-wms-api",
+      "name": "Create Daily Purchase",
+      "url": "{{baseUrl}}/api/finance/daily-purchases",
+      "method": "POST",
+      "sortNum": 86,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-update-purchase",
+      "colId": "enterprise-wms-api",
+      "name": "Update Daily Purchase",
+      "url": "{{baseUrl}}/api/finance/daily-purchases/{{id}}",
+      "method": "PUT",
+      "sortNum": 87,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-approve-purchase",
+      "colId": "enterprise-wms-api",
+      "name": "Approve Daily Purchase",
+      "url": "{{baseUrl}}/api/finance/daily-purchases/{{id}}/approve",
+      "method": "POST",
+      "sortNum": 88,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-monthly",
+      "colId": "enterprise-wms-api",
+      "name": "Generate Monthly Report",
+      "url": "{{baseUrl}}/api/finance/monthly-report",
+      "method": "POST",
+      "sortNum": 89,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-create-tx",
+      "colId": "enterprise-wms-api",
+      "name": "Create Finance Transaction",
+      "url": "{{baseUrl}}/api/finance/transactions",
+      "method": "POST",
+      "sortNum": 90,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-update-tx",
+      "colId": "enterprise-wms-api",
+      "name": "Update Finance Transaction",
+      "url": "{{baseUrl}}/api/finance/transactions/{{id}}",
+      "method": "PUT",
+      "sortNum": 91,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-fin-delete-tx",
+      "colId": "enterprise-wms-api",
+      "name": "Delete Finance Transaction",
+      "url": "{{baseUrl}}/api/finance/transactions/{{id}}",
+      "method": "DELETE",
+      "sortNum": 92,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-finance"
+    },
+    {
+      "_id": "req-global-report",
+      "colId": "enterprise-wms-api",
+      "name": "Generate Global Report",
+      "url": "{{baseUrl}}/api/global-report/generate",
+      "method": "POST",
+      "sortNum": 93,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-finance"
+    }
+  ]
+}

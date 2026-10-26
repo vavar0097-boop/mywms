@@ -50,6 +50,16 @@ const StockPage = lazy(() =>
     default: module.StockPage,
   }))
 );
+const StocktakePage = lazy(() =>
+  import("@/features/stocks/pages/StocktakePage").then((module) => ({
+    default: module.StocktakePage,
+  })),
+);
+const DailyPurchasePage = lazy(() =>
+  import("@/features/finance/pages/DailyPurchasePage").then((module) => ({
+    default: module.DailyPurchasePage,
+  })),
+);
 const PurchaseOrdersPage = lazy(() =>
   import("@/features/purchase-orders/pages/PurchaseOrdersPage").then(
     (module) => ({
@@ -240,6 +250,22 @@ export function App() {
                   permission={PERMISSIONS.STOCK_READ}
                 >
                   <StockPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="stock-opname"
+              element={
+                <PermissionRoute permission={PERMISSIONS.STOCKTAKE_WRITE}>
+                  <StocktakePage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="daily-purchases"
+              element={
+                <PermissionRoute permission={PERMISSIONS.DAILY_PURCHASES_SUBMIT}>
+                  <DailyPurchasePage />
                 </PermissionRoute>
               }
             />

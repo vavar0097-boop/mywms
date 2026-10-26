@@ -13,6 +13,7 @@ const roles: RoleName[] = [
   "owner",
   "finance",
   "warehouse",
+  "supervisor",
   "cashier",
 ];
 

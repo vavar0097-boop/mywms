@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 import { AuthRequest } from "../../middleware/auth.middleware";
+import { PERMISSIONS, roleHasPermission } from "../../config/permissions";
 import { FinanceService } from "./finance.service";
 
 const financeService = new FinanceService();
@@ -189,7 +190,7 @@ export class FinanceController {
   }
 
   async getDailyPurchases(
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction,
   ) {
@@ -203,6 +204,9 @@ export class FinanceController {
           typeof req.query.limit === "string"
             ? Number(req.query.limit)
             : undefined,
+        submittedBy: roleHasPermission(req.user?.role, PERMISSIONS.FINANCE_READ)
+          ? undefined
+          : req.user?.id,
       });
 
       res.status(200).json({
@@ -293,6 +297,28 @@ export class FinanceController {
       res.status(200).json({
         success: true,
         message: "Monthly report generated successfully",
+        data: report,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async generateReport(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const report = await financeService.generateReport({
+        date_from: String(req.body.date_from ?? ""),
+        date_to: String(req.body.date_to ?? ""),
+        period: String(req.body.period ?? ""),
+        sync_google: Boolean(req.body.sync_google),
+      });
+      res.status(200).json({
+        success: true,
+        message: "Finance report generated successfully",
         data: report,
       });
     } catch (error) {

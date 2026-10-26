@@ -35,7 +35,7 @@ router.post(
 router.post(
   "/:id/request",
   authMiddleware,
-  permissionMiddleware(PERMISSIONS.TRANSFERS_ACTION),
+  permissionMiddleware(PERMISSIONS.TRANSFERS_REQUEST),
   controller.request
 );
 

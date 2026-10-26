@@ -1,0 +1,116 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Users & Audit",
+  "dateExported": "2026-10-26T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-admin",
+      "name": "Users & Audit"
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-users-list",
+      "colId": "enterprise-wms-api",
+      "name": "List Users",
+      "url": "{{baseUrl}}/api/users",
+      "method": "GET",
+      "sortNum": 100,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-admin"
+    },
+    {
+      "_id": "req-users-roles",
+      "colId": "enterprise-wms-api",
+      "name": "List User Roles",
+      "url": "{{baseUrl}}/api/users/roles",
+      "method": "GET",
+      "sortNum": 101,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-admin"
+    },
+    {
+      "_id": "req-users-create",
+      "colId": "enterprise-wms-api",
+      "name": "Create User",
+      "url": "{{baseUrl}}/api/users",
+      "method": "POST",
+      "sortNum": 102,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-admin"
+    },
+    {
+      "_id": "req-users-update",
+      "colId": "enterprise-wms-api",
+      "name": "Update User",
+      "url": "{{baseUrl}}/api/users/{{id}}",
+      "method": "PUT",
+      "sortNum": 103,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-admin"
+    },
+    {
+      "_id": "req-users-delete",
+      "colId": "enterprise-wms-api",
+      "name": "Delete User",
+      "url": "{{baseUrl}}/api/users/{{id}}",
+      "method": "DELETE",
+      "sortNum": 104,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-admin"
+    },
+    {
+      "_id": "req-audit",
+      "colId": "enterprise-wms-api",
+      "name": "Audit Logs",
+      "url": "{{baseUrl}}/api/audit-logs",
+      "method": "GET",
+      "sortNum": 105,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-admin"
+    }
+  ]
+}

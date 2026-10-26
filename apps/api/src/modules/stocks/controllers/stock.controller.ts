@@ -18,10 +18,40 @@ import {
   createInitialStockSchema,
   createStockAdjustmentSchema,
 } from "../validators/stock.validator";
+import { StocktakeRepository } from "../repositories/stocktake.repository";
+import {
+  completeStocktakeSchema,
+  createStocktakeSchema,
+} from "../validators/stocktake.validator";
+import { NotFoundError } from "../../../utils/errors";
 
 export class StockController {
   private service =
     new StockService();
+  private stocktakes = new StocktakeRepository();
+
+  getStocktakes = async (req: AuthRequest, res: Response) => {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+    return successResponse(res, await this.stocktakes.findMany(limit), "Stock opnames fetched successfully");
+  };
+
+  getStocktake = async (req: AuthRequest, res: Response) => {
+    const stocktake = await this.stocktakes.findById(String(req.params.id));
+    if (!stocktake) throw new NotFoundError("Stock opname not found");
+    return successResponse(res, stocktake, "Stock opname fetched successfully");
+  };
+
+  createStocktake = async (req: AuthRequest, res: Response) => {
+    const dto = createStocktakeSchema.parse(req.body);
+    const stocktake = await this.stocktakes.create(dto.location_id, req.user!.id);
+    return createdResponse(res, stocktake, "Stock opname started successfully");
+  };
+
+  completeStocktake = async (req: AuthRequest, res: Response) => {
+    const dto = completeStocktakeSchema.parse(req.body);
+    const stocktake = await this.stocktakes.complete(String(req.params.id), req.user!.id, dto.counts);
+    return successResponse(res, stocktake, "Stock opname completed successfully");
+  };
 
   getCurrentStocks = async (
     req: AuthRequest,

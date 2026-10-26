@@ -1,0 +1,176 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Purchasing",
+  "dateExported": "2026-10-26T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-purchasing",
+      "name": "Purchasing"
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-po-list",
+      "colId": "enterprise-wms-api",
+      "name": "List Purchase Orders",
+      "url": "{{baseUrl}}/api/purchase-orders",
+      "method": "GET",
+      "sortNum": 60,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-import",
+      "colId": "enterprise-wms-api",
+      "name": "Parse PO Import",
+      "url": "{{baseUrl}}/api/purchase-orders/parse-import",
+      "method": "POST",
+      "sortNum": 61,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-low-stock",
+      "colId": "enterprise-wms-api",
+      "name": "Low Stock Items",
+      "url": "{{baseUrl}}/api/purchase-orders/low-stock",
+      "method": "GET",
+      "sortNum": 62,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-generate",
+      "colId": "enterprise-wms-api",
+      "name": "Generate Low Stock PO",
+      "url": "{{baseUrl}}/api/purchase-orders/generate-low-stock",
+      "method": "POST",
+      "sortNum": 63,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-detail",
+      "colId": "enterprise-wms-api",
+      "name": "Get Purchase Order",
+      "url": "{{baseUrl}}/api/purchase-orders/{{id}}",
+      "method": "GET",
+      "sortNum": 64,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-create",
+      "colId": "enterprise-wms-api",
+      "name": "Create Purchase Order",
+      "url": "{{baseUrl}}/api/purchase-orders",
+      "method": "POST",
+      "sortNum": 65,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-order",
+      "colId": "enterprise-wms-api",
+      "name": "Place Purchase Order",
+      "url": "{{baseUrl}}/api/purchase-orders/{{id}}/order",
+      "method": "POST",
+      "sortNum": 66,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-receive",
+      "colId": "enterprise-wms-api",
+      "name": "Receive Purchase Order",
+      "url": "{{baseUrl}}/api/purchase-orders/{{id}}/receive",
+      "method": "POST",
+      "sortNum": 67,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      },
+      "tests": [],
+      "folder": "folder-purchasing"
+    },
+    {
+      "_id": "req-po-cancel",
+      "colId": "enterprise-wms-api",
+      "name": "Cancel Purchase Order",
+      "url": "{{baseUrl}}/api/purchase-orders/{{id}}/cancel",
+      "method": "POST",
+      "sortNum": 68,
+      "created": "2026-10-26T00:00:00.000Z",
+      "modified": "2026-10-26T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": [],
+      "folder": "folder-purchasing"
+    }
+  ]
+}

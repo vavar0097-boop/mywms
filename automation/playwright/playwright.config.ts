@@ -14,7 +14,7 @@ const appUrl =
     ? process.env.WMS_LOCAL_APP_URL || "http://127.0.0.1:5173"
     : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 const recordRun = process.env.WMS_RECORD === "true";
-const roles = ["admin", "owner", "finance", "warehouse", "cashier"] as const;
+const roles = ["admin", "owner", "finance", "warehouse", "supervisor", "cashier"] as const;
 const hasAllRoleCredentials = roles.every((role) => credentialsFor(role));
 
 export default defineConfig({
