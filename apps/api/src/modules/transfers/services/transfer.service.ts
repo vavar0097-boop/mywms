@@ -8,6 +8,7 @@ import { TransferQueryDto } from "../dto/transfer-query.dto";
 import { TransferRepository } from "../repositories/transfer.repository";
 
 import { StockRepository } from "../../stocks/repositories/stock.repository";
+import { BadRequestError, NotFoundError } from "../../../utils/errors";
 
 export class TransferService {
   constructor(
@@ -28,7 +29,7 @@ export class TransferService {
       dto.source_location_id ===
       dto.destination_location_id
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Source and destination location cannot be the same"
       );
     }
@@ -37,10 +38,29 @@ export class TransferService {
       if (
         item.qty_requested <= 0
       ) {
-        throw new Error(
+        throw new BadRequestError(
           "Quantity must be greater than zero"
         );
       }
+    }
+
+    const [sourceLocation, destinationLocation] = await Promise.all([
+      this.repository.findLocationById(dto.source_location_id),
+      this.repository.findLocationById(dto.destination_location_id),
+    ]);
+
+    if (
+      !sourceLocation ||
+      sourceLocation.warehouse_id !== dto.source_warehouse_id
+    ) {
+      throw new BadRequestError("Source location does not belong to the selected warehouse");
+    }
+
+    if (
+      !destinationLocation ||
+      destinationLocation.warehouse_id !== dto.destination_warehouse_id
+    ) {
+      throw new BadRequestError("Destination location does not belong to the selected warehouse");
     }
 
     const transferNo =
@@ -81,7 +101,7 @@ export class TransferService {
       );
 
     if (!transfer) {
-      throw new Error(
+      throw new NotFoundError(
         "Transfer not found"
       );
     }
@@ -104,7 +124,7 @@ export class TransferService {
     if (
       transfer.status !== "DRAFT"
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Only DRAFT transfer can be requested"
       );
     }
@@ -146,7 +166,7 @@ export class TransferService {
       transfer.status !==
       "REQUESTED"
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Only REQUESTED transfer can be picked"
       );
     }
@@ -167,7 +187,7 @@ export class TransferService {
         available <
         item.qty_requested
       ) {
-        throw new Error(
+        throw new BadRequestError(
           `Insufficient stock for item ${item.item_id}`
         );
       }
@@ -254,7 +274,7 @@ export class TransferService {
       transfer.status !==
       "PICKED"
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Only PICKED transfer can be shipped"
       );
     }
@@ -285,6 +305,7 @@ export class TransferService {
     dto: TransferActionDto,
     user: {
       id: string;
+      role?: string;
     }
   ) {
     const transfer =
@@ -296,9 +317,19 @@ export class TransferService {
       transfer.status !==
       "IN_TRANSIT"
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Only IN_TRANSIT transfer can be received"
       );
+    }
+
+    if (["CASHIER", "OPERATOR"].includes(user.role?.toUpperCase() ?? "")) {
+      const destination = await this.repository.findLocationById(
+        transfer.destination_location_id,
+      );
+
+      if (destination?.level !== "OUTLET") {
+        throw new BadRequestError("Cashier can only receive transfers destined for an outlet");
+      }
     }
 
     const items =
@@ -393,7 +424,7 @@ export class TransferService {
         transfer.status
       )
     ) {
-      throw new Error(
+      throw new BadRequestError(
         "Transfer cannot be cancelled"
       );
     }

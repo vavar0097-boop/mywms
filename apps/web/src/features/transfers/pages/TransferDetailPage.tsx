@@ -16,6 +16,8 @@ import {
   CardTitle,
 } from "@/shared/ui/card/card";
 import { toast } from "@/shared/ui/toast";
+import { PERMISSIONS, hasPermission } from "@/shared/auth/permissions";
+import { useAuthStore } from "@/stores/auth.store";
 
 import { TransferActionButtons } from "../components/TransferActionButtons";
 import { TransferStatusBadge } from "../components/TransferStatusBadge";
@@ -54,6 +56,10 @@ function eventTitle(event: TransferEvent) {
 
 export function TransferDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const role = useAuthStore((state) => state.user?.role);
+  const canManage = hasPermission(role, PERMISSIONS.TRANSFERS_ACTION);
+  const canReceive =
+    canManage || hasPermission(role, PERMISSIONS.TRANSFERS_RECEIVE);
 
   const {
     selectedTransfer,
@@ -171,6 +177,8 @@ export function TransferDetailPage() {
             status={transfer.status}
             loadingAction={actionLoading}
             onAction={handleAction}
+            canManage={canManage}
+            canReceive={canReceive}
           />
         </div>
       </div>

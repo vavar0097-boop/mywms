@@ -9,16 +9,22 @@ type Props = {
   status: TransferStatus;
   loadingAction: TransferAction | null;
   onAction: (action: TransferAction) => void;
+  canManage: boolean;
+  canReceive: boolean;
 };
 
 export function TransferActionButtons({
   status,
   loadingAction,
   onAction,
+  canManage,
+  canReceive,
 }: Props) {
   const isBusy = Boolean(loadingAction);
 
   if (status === "DRAFT") {
+    if (!canManage) return <TransferWaitingMessage message="Menunggu gudang mengajukan transfer." />;
+
     return (
       <div className="flex flex-wrap gap-2">
         <Button
@@ -44,6 +50,8 @@ export function TransferActionButtons({
   }
 
   if (status === "REQUESTED") {
+    if (!canManage) return <TransferWaitingMessage message="Menunggu petugas gudang mengambil barang." />;
+
     return (
       <div className="flex flex-wrap gap-2">
         <Button
@@ -67,6 +75,8 @@ export function TransferActionButtons({
   }
 
   if (status === "PICKED") {
+    if (!canManage) return <TransferWaitingMessage message="Barang sudah dipilih. Menunggu pengiriman dari gudang." />;
+
     return (
       <Button
         disabled={isBusy}
@@ -80,6 +90,8 @@ export function TransferActionButtons({
   }
 
   if (status === "IN_TRANSIT") {
+    if (!canReceive) return <TransferWaitingMessage message="Barang sedang dikirim ke lokasi tujuan." />;
+
     return (
       <Button
         disabled={isBusy}
@@ -99,5 +111,13 @@ export function TransferActionButtons({
     >
       Locked / no action
     </Button>
+  );
+}
+
+function TransferWaitingMessage({ message }: { message: string }) {
+  return (
+    <p className="max-w-xs rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+      {message}
+    </p>
   );
 }

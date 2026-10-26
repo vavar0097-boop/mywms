@@ -9,18 +9,43 @@ import {
 } from "../types/transfer.type";
 
 export class TransferRepository {
+  async findLocationById(id: string) {
+    const { data, error } = await db
+      .from("locations")
+      .select("id, warehouse_id, level")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
   async findById(
     id: string
   ) {
-    const { data } = await db
+    const { data, error } = await db
       .from("stock_transfers")
       .select(`
         *,
-        stock_transfer_items(*),
+        source_warehouse:warehouses!stock_transfers_source_warehouse_id_fkey(code, name),
+        destination_warehouse:warehouses!stock_transfers_destination_warehouse_id_fkey(code, name),
+        source_location:locations!stock_transfers_source_location_id_fkey(code, name),
+        destination_location:locations!stock_transfers_destination_location_id_fkey(code, name),
+        stock_transfer_items(*, items(item_code, item_name, units:base_unit_id(code, name))),
         transfer_events(*)
       `)
       .eq("id", id)
       .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw error;
+    }
 
     return data;
   }
@@ -33,7 +58,11 @@ export class TransferRepository {
   ) {
     let query = db
       .from("stock_transfers")
-      .select("*", {
+      .select(`
+        *,
+        source_location:locations!stock_transfers_source_location_id_fkey(code, name),
+        destination_location:locations!stock_transfers_destination_location_id_fkey(code, name)
+      `, {
         count: "exact",
       });
 

@@ -49,9 +49,28 @@ export type TransferItem = {
   qty_requested?: number | null;
   quantity_requested?: number | null;
   qty_picked?: number | null;
+  qty_shipped?: number | null;
   qty_received?: number | null;
   unit_name?: string | null;
   unit_code?: string | null;
+  items?: {
+    item_code?: string | null;
+    item_name?: string | null;
+    units?: {
+      code?: string | null;
+      name?: string | null;
+    } | null;
+  } | null;
+};
+
+export type TransferLocationSummary = {
+  code?: string | null;
+  name?: string | null;
+};
+
+export type TransferWarehouseSummary = {
+  code?: string | null;
+  name?: string | null;
 };
 
 export type TransferEvent = {
@@ -72,18 +91,22 @@ export type Transfer = {
   source_warehouse_id?: string | null;
   source_warehouse_code?: string | null;
   source_warehouse_name?: string | null;
+  source_warehouse?: TransferWarehouseSummary | null;
 
   destination_warehouse_id?: string | null;
   destination_warehouse_code?: string | null;
   destination_warehouse_name?: string | null;
+  destination_warehouse?: TransferWarehouseSummary | null;
 
   source_location_id?: string | null;
   source_location_code?: string | null;
   source_location_name?: string | null;
+  source_location?: TransferLocationSummary | null;
 
   destination_location_id?: string | null;
   destination_location_code?: string | null;
   destination_location_name?: string | null;
+  destination_location?: TransferLocationSummary | null;
 
   status: TransferStatus;
   remarks?: string | null;

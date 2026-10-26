@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Banknote,
   Boxes,
   Check,
@@ -25,6 +26,8 @@ import {
 } from "react";
 
 import { getApiErrorMessage } from "@/shared/lib/api/error";
+import { Link } from "react-router-dom";
+import { PERMISSIONS, hasPermission } from "@/shared/auth/permissions";
 import { Button } from "@/shared/ui/button/button";
 import { FeedbackPanel } from "@/shared/ui/feedback";
 import { toast } from "@/shared/ui/toast";
@@ -199,6 +202,10 @@ export function PosPage() {
     )?.location_name || "Pilih Outlet";
   const cashierName =
     user?.full_name || user?.name || user?.username || "Kasir";
+  const canReceiveTransfers = hasPermission(
+    user?.role,
+    PERMISSIONS.TRANSFERS_READ,
+  );
   const activeShiftName = session?.shift_name || shiftName;
 
   const filteredMenu = useMemo(
@@ -813,6 +820,16 @@ export function PosPage() {
               ) : null}
 
               <div className="grid gap-2">
+                {canReceiveTransfers ? (
+                  <Link
+                    to="/dashboard/transfers"
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex h-12 items-center gap-3 rounded-xl border border-teal-100 px-3 text-sm font-bold transition hover:bg-teal-50"
+                  >
+                    <ArrowLeftRight size={18} />
+                    Barang Masuk
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   disabled={!session}

@@ -15,6 +15,7 @@ type Warehouse = {
 
 type Location = {
   id: string;
+  code?: string;
   warehouse_id: string;
   location_type: string;
   is_active: boolean;
@@ -217,6 +218,127 @@ test.describe("prototype transactional workflows", () => {
       );
     } finally {
       await api.dispose();
+    }
+  });
+
+  test("warehouse drafts and dispatches; outlet receives using retained source and destination", async ({ page }) => {
+    test.setTimeout(120_000);
+    test.skip(
+      !allowMutation,
+      "Set WMS_ALLOW_MUTATION=true only for the approved prototype test environment",
+    );
+
+    const warehouseCredentials = credentialsFor("warehouse");
+    const cashierCredentials = credentialsFor("cashier");
+    test.skip(!warehouseCredentials, missingCredentialsMessage("warehouse"));
+    test.skip(!cashierCredentials, missingCredentialsMessage("cashier"));
+
+    const warehouse = await loginApi(warehouseCredentials!);
+    const warehouseHeaders = authHeaders(warehouse.cookie) ?? {};
+    let transferId: string | null = null;
+    let itemId: string | null = null;
+    let destinationId: string | null = null;
+    let destinationBaseline = 0;
+
+    try {
+      const [warehouses, locations, stocks] = await Promise.all([
+        warehouse.api.get("warehouses?limit=100", { headers: warehouseHeaders }).then(listFrom<Warehouse>),
+        warehouse.api.get("locations?limit=100", { headers: warehouseHeaders }).then(listFrom<Location>),
+        warehouse.api.get("stocks/current?limit=100", { headers: warehouseHeaders }).then(listFrom<StockRow>),
+      ]);
+      const activeWarehouseIds = new Set(
+        warehouses.filter((row) => row.is_active).map((row) => row.id),
+      );
+      const sourceCandidate = locations.find((location) =>
+        location.is_active &&
+        location.location_type === "BIN" &&
+        activeWarehouseIds.has(location.warehouse_id) &&
+        stocks.some((stock) =>
+          stock.location_id === location.id && Number(stock.quantity) >= 1,
+        ),
+      );
+      const destinationCandidate = locations.find((location) =>
+        location.is_active && location.location_type === "OUTLET",
+      );
+      test.skip(!sourceCandidate, "An active, stocked warehouse BIN is required");
+      test.skip(!destinationCandidate, "An active outlet location is required");
+      test.skip(
+        sourceCandidate!.warehouse_id === destinationCandidate!.warehouse_id,
+        "The transfer test requires source and outlet in different warehouses",
+      );
+      expect(sourceCandidate!.code).toBeTruthy();
+      expect(destinationCandidate!.code).toBeTruthy();
+      const sourceLocationCode = sourceCandidate!.code!;
+      const destinationLocationCode = destinationCandidate!.code!;
+
+      const sourceWarehouse = warehouses.find(
+        (row) => row.id === sourceCandidate!.warehouse_id,
+      );
+      const destinationWarehouse = warehouses.find(
+        (row) => row.id === destinationCandidate!.warehouse_id,
+      );
+      const sourceStock = stocks.find(
+        (row) => row.location_id === sourceCandidate!.id && Number(row.quantity) >= 1,
+      );
+      expect(sourceWarehouse).toBeTruthy();
+      expect(destinationWarehouse).toBeTruthy();
+      expect(sourceStock).toBeTruthy();
+      itemId = sourceStock!.item_id;
+      destinationId = destinationCandidate!.id;
+      destinationBaseline = await currentQuantity(
+        warehouse.api,
+        warehouseHeaders,
+        itemId,
+        destinationId,
+      );
+
+      await login(page, warehouseCredentials!);
+      await page.goto("/dashboard/transfers/new");
+      await expect(page.getByRole("heading", { name: "Create Transfer" })).toBeVisible();
+      const selects = page.locator("form select");
+      await selects.nth(0).selectOption(sourceWarehouse!.id);
+      await selects.nth(1).selectOption(destinationWarehouse!.id);
+      await selects.nth(2).selectOption(sourceCandidate!.id);
+      await selects.nth(3).selectOption(destinationCandidate!.id);
+      await selects.nth(4).selectOption(itemId);
+      await page.getByPlaceholder(/Example: Transfer/).fill(
+        `QA warehouse-to-outlet transfer ${Date.now()}`,
+      );
+      await page.getByRole("button", { name: "Create Draft" }).click();
+
+      await expect(page.getByText(sourceLocationCode, { exact: false })).toBeVisible();
+      await expect(page.getByText(destinationLocationCode, { exact: false })).toBeVisible();
+      const detailUrl = page.url();
+      transferId = detailUrl.split("/").pop() ?? null;
+      expect(transferId).toBeTruthy();
+      await expect(page.getByText("DRAFT", { exact: true })).toBeVisible();
+
+      await page.getByRole("button", { name: "Request" }).click();
+      await expect(page.getByText("REQUESTED", { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Pick" }).click();
+      await expect(page.getByText("PICKED", { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Dispatch" }).click();
+      await expect(page.getByText("IN_TRANSIT", { exact: true })).toBeVisible();
+
+      await page.context().clearCookies();
+      await page.goto("/login");
+      await page.evaluate(() => window.localStorage.clear());
+      await login(page, cashierCredentials!);
+      await page.goto(`/dashboard/transfers/${transferId}`);
+      await expect(page.getByRole("heading", { name: /TRF-/ })).toBeVisible();
+      await expect(page.getByText(destinationLocationCode, { exact: false })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Receive" })).toBeVisible();
+      await page.getByRole("button", { name: "Receive" }).click();
+      await expect(page.getByText("RECEIVED", { exact: true })).toBeVisible();
+
+      expect(
+        await currentQuantity(warehouse.api, warehouseHeaders, itemId, destinationId),
+      ).toBeCloseTo(destinationBaseline + 1, 4);
+      console.log(
+        `Retained UI transfer ${transferId}; source=${sourceLocationCode}; destination=${destinationLocationCode}; status=RECEIVED`,
+      );
+    } finally {
+      await warehouse.api.dispose();
     }
   });
 
