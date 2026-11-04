@@ -39,6 +39,12 @@ type MenuItem = {
 type Transfer = {
   id: string;
   status: string;
+  stock_transfer_items?: Array<{
+    id: string;
+    qty_shipped: number | string;
+    qty_received?: number | string;
+  }>;
+  transfer_events?: Array<{ event_type: string; notes?: string | null }>;
 };
 
 type Sale = {
@@ -199,9 +205,20 @@ test.describe("prototype transactional workflows", () => {
         ["dispatch", "IN_TRANSIT"],
         ["receive", "RECEIVED"],
       ] as const) {
+        const actionBody = action === "receive"
+          ? {
+              remarks: "Playwright QA transfer workflow",
+              items: (await api.get(`transfers/${transferId}`, { headers })
+                .then((response) => responseData<Transfer>(response)))
+                .stock_transfer_items!.map((item) => ({
+                  transfer_item_id: item.id,
+                  qty_received: Number(item.qty_shipped),
+                })),
+            }
+          : { remarks: "Playwright QA transfer workflow" };
         const actionResponse = await api.post(`transfers/${transferId}/${action}`, {
           headers,
-          data: { remarks: "Playwright QA transfer workflow" },
+          data: actionBody,
         });
         const updated = await responseData<Transfer>(actionResponse);
         expect(updated.status).toBe(expectedStatus);
@@ -238,6 +255,7 @@ test.describe("prototype transactional workflows", () => {
     let transferId: string | null = null;
     let itemId: string | null = null;
     let destinationId: string | null = null;
+    let sourceBaseline = 0;
     let destinationBaseline = 0;
 
     try {
@@ -254,7 +272,7 @@ test.describe("prototype transactional workflows", () => {
         location.location_type === "BIN" &&
         activeWarehouseIds.has(location.warehouse_id) &&
         stocks.some((stock) =>
-          stock.location_id === location.id && Number(stock.quantity) >= 1,
+          stock.location_id === location.id && Number(stock.quantity) >= 2,
         ),
       );
       const destinationCandidate = locations.find((location) =>
@@ -278,13 +296,19 @@ test.describe("prototype transactional workflows", () => {
         (row) => row.id === destinationCandidate!.warehouse_id,
       );
       const sourceStock = stocks.find(
-        (row) => row.location_id === sourceCandidate!.id && Number(row.quantity) >= 1,
+        (row) => row.location_id === sourceCandidate!.id && Number(row.quantity) >= 2,
       );
       expect(sourceWarehouse).toBeTruthy();
       expect(destinationWarehouse).toBeTruthy();
       expect(sourceStock).toBeTruthy();
       itemId = sourceStock!.item_id;
       destinationId = destinationCandidate!.id;
+      sourceBaseline = await currentQuantity(
+        warehouse.api,
+        warehouseHeaders,
+        itemId,
+        sourceCandidate!.id,
+      );
       destinationBaseline = await currentQuantity(
         warehouse.api,
         warehouseHeaders,
@@ -301,6 +325,7 @@ test.describe("prototype transactional workflows", () => {
       await selects.nth(2).selectOption(sourceCandidate!.id);
       await selects.nth(3).selectOption(destinationCandidate!.id);
       await selects.nth(4).selectOption(itemId);
+      await page.locator('input[type="number"]').first().fill("2");
       await page.getByPlaceholder(/Example: Transfer/).fill(
         `QA warehouse-to-outlet transfer ${Date.now()}`,
       );
@@ -329,13 +354,34 @@ test.describe("prototype transactional workflows", () => {
       await expect(page.getByText(destinationLocationCode, { exact: false })).toBeVisible();
       await expect(page.getByRole("button", { name: "Receive" })).toBeVisible();
       await page.getByRole("button", { name: "Receive" }).click();
+      await page.getByRole("spinbutton", { name: /Jumlah diterima/ }).fill("1");
+      await expect(page.getByText("Selisih -1")).toBeVisible();
+      await page.getByRole("textbox", { name: "Catatan selisih / penerimaan" }).fill("Satu unit tidak ada di kiriman");
+      await page.getByRole("button", { name: "Konfirmasi penerimaan" }).click();
       await expect(page.getByText("RECEIVED", { exact: true })).toBeVisible();
 
       expect(
         await currentQuantity(warehouse.api, warehouseHeaders, itemId, destinationId),
       ).toBeCloseTo(destinationBaseline + 1, 4);
+      expect(
+        await currentQuantity(warehouse.api, warehouseHeaders, itemId, sourceCandidate!.id),
+      ).toBeCloseTo(sourceBaseline - 2, 4);
+      const receivedResponse = await warehouse.api.get(`transfers/${transferId}`, {
+        headers: warehouseHeaders,
+      });
+      const receivedTransfer = await responseData<Transfer>(receivedResponse);
+      expect(
+        receivedTransfer.transfer_events?.some((event) =>
+          event.event_type === "RECEIVED" &&
+          event.notes?.includes("shipped 2, received 1") &&
+          event.notes.includes("Satu unit tidak ada di kiriman"),
+        ),
+      ).toBe(true);
+      expect(
+        Number(receivedTransfer.stock_transfer_items?.[0]?.qty_received),
+      ).toBe(1);
       console.log(
-        `Retained UI transfer ${transferId}; source=${sourceLocationCode}; destination=${destinationLocationCode}; status=RECEIVED`,
+        `Retained UI transfer ${transferId}; source=${sourceLocationCode}; destination=${destinationLocationCode}; shipped=2 received=1; status=RECEIVED`,
       );
     } finally {
       await warehouse.api.dispose();

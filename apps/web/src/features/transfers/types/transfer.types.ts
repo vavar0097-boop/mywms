@@ -13,6 +13,14 @@ export type TransferAction =
   | "receive"
   | "cancel";
 
+export type TransferReceivePayload = {
+  remarks?: string;
+  items: Array<{
+    transfer_item_id: string;
+    qty_received: number;
+  }>;
+};
+
 export type WarehouseOption = {
   id: string;
   code: string;
@@ -124,6 +132,7 @@ export type Transfer = {
 
   items?: TransferItem[];
   transfer_items?: TransferItem[];
+  stock_transfer_items?: TransferItem[];
   events?: TransferEvent[];
   transfer_events?: TransferEvent[];
 };

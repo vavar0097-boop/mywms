@@ -71,6 +71,20 @@ function exportFinanceReport(report: MonthlyReport) {
     ["Penjualan tunai", report.summary.cash_sales],
     ["Penjualan non-tunai", report.summary.noncash_sales],
     [],
+    ["Rekap per outlet"],
+    ["Outlet", "Pemasukan", "Pengeluaran", "Tunai", "Non-tunai", "Pembelian harian", "Jumlah transaksi", "Shift", "Setoran"],
+    ...(report.outlet_summary ?? []).map((outlet) => [
+      outlet.outlet_name,
+      outlet.income,
+      outlet.expense,
+      outlet.cash_sales,
+      outlet.noncash_sales,
+      outlet.daily_purchase_total,
+      outlet.sales_count,
+      outlet.shift_count,
+      outlet.deposits,
+    ]),
+    [],
   ];
   for (const [sheetName, sheetRows] of Object.entries(report.sheets ?? {})) {
     rows.push([sheetName]);
@@ -822,6 +836,30 @@ export function FinancePage() {
               <div className="flex justify-between">
                 <span>Balance</span>
                 <strong>{money(report.summary.balance)}</strong>
+              </div>
+              <div className="mt-3 overflow-x-auto border-t border-slate-200 pt-3">
+                <p className="mb-2 font-bold">Rekap per outlet</p>
+                <table className="min-w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-left text-slate-500">
+                      <th className="py-1 pr-3">Outlet</th>
+                      <th className="py-1 pr-3 text-right">Masuk</th>
+                      <th className="py-1 text-right">Keluar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(report.outlet_summary ?? []).map((outlet) => (
+                      <tr key={outlet.outlet_id ?? outlet.outlet_name} className="border-b last:border-0">
+                        <td className="py-1 pr-3">{outlet.outlet_name}</td>
+                        <td className="py-1 pr-3 text-right">{money(outlet.income)}</td>
+                        <td className="py-1 text-right">{money(outlet.expense)}</td>
+                      </tr>
+                    ))}
+                    {(report.outlet_summary ?? []).length === 0 ? (
+                      <tr><td className="py-2 text-slate-500" colSpan={3}>Belum ada transaksi outlet pada periode ini.</td></tr>
+                    ) : null}
+                  </tbody>
+                </table>
               </div>
               <p className="text-xs font-semibold text-slate-500">
                 Google:{" "}

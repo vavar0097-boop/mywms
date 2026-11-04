@@ -89,6 +89,14 @@ export const transferActionSchema = z.object({
     .optional(),
 });
 
+export const transferReceiveSchema = z.object({
+  remarks: z.string().trim().max(500).optional(),
+  items: z.array(z.object({
+    transfer_item_id: z.string().uuid("Transfer item is invalid"),
+    qty_received: z.coerce.number().min(0, "Received quantity cannot be negative"),
+  })).min(1, "A physical count is required for every transfer item"),
+});
+
 export type CreateTransferInput =
   z.infer<typeof createTransferSchema>;
 
@@ -97,3 +105,6 @@ export type TransferQueryInput =
 
 export type TransferActionInput =
   z.infer<typeof transferActionSchema>;
+
+export type TransferReceiveInput =
+  z.infer<typeof transferReceiveSchema>;

@@ -4,6 +4,7 @@ import type {
   CreateTransferPayload,
   Transfer,
   TransferAction,
+  TransferReceivePayload,
 } from "../types/transfer.types";
 import { transferService } from "../services/transfer.service";
 
@@ -24,6 +25,7 @@ type TransferStore = {
   runAction: (
     id: string,
     action: TransferAction,
+    payload?: TransferReceivePayload | { remarks?: string },
   ) => Promise<void>;
 };
 
@@ -96,13 +98,13 @@ export const useTransferStore = create<TransferStore>(
       }
     },
 
-    async runAction(id, action) {
+    async runAction(id, action, payload) {
       set({
         actionLoading: action,
       });
 
       try {
-        await transferService.runAction(id, action);
+        await transferService.runAction(id, action, payload);
         await get().fetchTransfer(id);
         await get().fetchTransfers();
       } finally {

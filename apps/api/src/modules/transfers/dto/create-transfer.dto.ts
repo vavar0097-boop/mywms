@@ -21,3 +21,11 @@ export interface CreateTransferDto {
 export interface TransferActionDto {
   remarks?: string;
 }
+
+export interface TransferReceiveDto {
+  remarks?: string;
+  items: Array<{
+    transfer_item_id: string;
+    qty_received: number;
+  }>;
+}

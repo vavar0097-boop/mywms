@@ -23,6 +23,10 @@ export function getHomePathForRole(role?: string | null) {
     return "/dashboard/transfers";
   }
 
+  if (normalizedRole === "SUPERVISOR") {
+    return "/dashboard/transfers";
+  }
+
   return "/dashboard";
 }
 

@@ -1,6 +1,7 @@
 import {
   CreateTransferDto,
   TransferActionDto,
+  TransferReceiveDto,
 } from "../dto/create-transfer.dto";
 
 import { TransferQueryDto } from "../dto/transfer-query.dto";
@@ -302,7 +303,7 @@ export class TransferService {
 
   async receive(
     transferId: string,
-    dto: TransferActionDto,
+    dto: TransferReceiveDto,
     user: {
       id: string;
       role?: string;
@@ -337,9 +338,31 @@ export class TransferService {
         transferId
       );
 
+    if (dto.items.length !== items.length) {
+      throw new BadRequestError("A physical count is required for every transfer item");
+    }
+
+    const receivedByItem = new Map(
+      dto.items.map((row) => [row.transfer_item_id, row.qty_received]),
+    );
+    if (receivedByItem.size !== items.length || items.some((item) => !receivedByItem.has(item.id))) {
+      throw new BadRequestError("Received quantities must match the transfer items");
+    }
+
+    const discrepancies: string[] = [];
+
     for (const item of items) {
-      await this.stockRepository.createStockMovement(
-        {
+      const qtyReceived = receivedByItem.get(item.id)!;
+      const qtyShipped = Number(item.qty_shipped ?? 0);
+      if (qtyReceived > qtyShipped) {
+        throw new BadRequestError(`Received quantity exceeds shipped quantity for item ${item.item_id}`);
+      }
+      if (qtyReceived !== qtyShipped) {
+        discrepancies.push(`${item.item_id}: shipped ${qtyShipped}, received ${qtyReceived}`);
+      }
+
+      if (qtyReceived > 0) {
+        await this.stockRepository.createStockMovement({
           item_id:
             item.item_id,
 
@@ -350,7 +373,7 @@ export class TransferService {
             "IN",
 
           quantity:
-            item.qty_shipped,
+            qtyReceived,
 
           reference_type:
             "TRANSFER",
@@ -371,14 +394,19 @@ export class TransferService {
 
           stock_effect:
             "PLUS",
-        }
-      );
+        });
+      }
 
       await this.repository.updateItemReceivedQty(
         item.id,
-        item.qty_shipped
+        qtyReceived
       );
     }
+
+    const receiveRemarks = [
+      dto.remarks?.trim(),
+      discrepancies.length ? `Selisih penerimaan: ${discrepancies.join("; ")}` : undefined,
+    ].filter(Boolean).join(" | ");
 
     await this.repository.updateStatus(
       transferId,
@@ -396,7 +424,7 @@ export class TransferService {
       transferId,
       "RECEIVED",
       user.id,
-      dto.remarks
+      receiveRemarks
     );
 
     return this.findById(

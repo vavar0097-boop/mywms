@@ -39,6 +39,7 @@ type ReportTransactionRow = {
   transaction_date?: string | null;
   outlet_id?: string | null;
   outlet?: { code?: string | null; name?: string | null } | null;
+  reference_type?: string | null;
   type?: string | null;
   category?: string | null;
   description?: string | null;
@@ -47,6 +48,7 @@ type ReportTransactionRow = {
 };
 
 type ReportSaleRow = {
+  location_id?: string | null;
   sale_no?: string | null;
   status?: string | null;
   created_at?: string | null;
@@ -60,6 +62,7 @@ type ReportSaleRow = {
 
 type ReportPurchaseRow = {
   purchase_date?: string | null;
+  outlet_id?: string | null;
   outlet?: { code?: string | null; name?: string | null } | null;
   vendor_name?: string | null;
   status?: string | null;
@@ -80,6 +83,19 @@ type ReportSettlementRow = {
   total_deposits?: number | string | null;
   location_id?: string | null;
   location?: { code?: string | null; name?: string | null } | null;
+};
+
+type OutletReportSummary = {
+  outlet_id: string | null;
+  outlet_name: string;
+  income: number;
+  expense: number;
+  cash_sales: number;
+  noncash_sales: number;
+  daily_purchase_total: number;
+  sales_count: number;
+  shift_count: number;
+  deposits: number;
 };
 
 function cleanPayload(
@@ -342,6 +358,83 @@ function paymentTotal(sale: ReportSaleRow, method: "CASH" | "NONCASH") {
     .reduce((sum, payment) => sum + numberValue(payment.amount), 0);
 }
 
+function buildOutletSummary(params: {
+  transactions: ReportTransactionRow[];
+  sales: ReportSaleRow[];
+  purchases: ReportPurchaseRow[];
+  settlements: ReportSettlementRow[];
+}) {
+  const summaries = new Map<string, OutletReportSummary>();
+  const get = (
+    id: string | null | undefined,
+    name?: string | null,
+    code?: string | null,
+  ) => {
+    const key = id || `unassigned:${code || name || "all"}`;
+    let summary = summaries.get(key);
+    if (!summary) {
+      summary = {
+        outlet_id: id ?? null,
+        outlet_name: name || code || "Semua outlet",
+        income: 0,
+        expense: 0,
+        cash_sales: 0,
+        noncash_sales: 0,
+        daily_purchase_total: 0,
+        sales_count: 0,
+        shift_count: 0,
+        deposits: 0,
+      };
+      summaries.set(key, summary);
+    }
+    return summary;
+  };
+
+  for (const transaction of params.transactions) {
+    if (transaction.reference_type === "SALE" || transaction.reference_type === "CASHIER_EXPENSE") {
+      continue;
+    }
+    const outlet = get(
+      transaction.outlet_id,
+      transaction.outlet?.name,
+      transaction.outlet?.code,
+    );
+    if (transaction.type === "INCOME") {
+      outlet.income += numberValue(transaction.amount);
+    } else if (transaction.type === "EXPENSE") {
+      outlet.expense += numberValue(transaction.amount);
+    }
+  }
+
+  for (const sale of params.sales) {
+    const outlet = get(sale.location_id, sale.location?.name, sale.location?.code);
+    outlet.income += numberValue(sale.grand_total);
+    outlet.cash_sales += paymentTotal(sale, "CASH");
+    outlet.noncash_sales += paymentTotal(sale, "NONCASH");
+    outlet.sales_count += 1;
+  }
+
+  for (const purchase of params.purchases) {
+    const outlet = get(purchase.outlet_id, purchase.outlet?.name, purchase.outlet?.code);
+    outlet.daily_purchase_total += numberValue(purchase.total_amount);
+  }
+
+  for (const settlement of params.settlements) {
+    const outlet = get(
+      settlement.location_id,
+      settlement.location?.name,
+      settlement.location?.code,
+    );
+    outlet.expense += numberValue(settlement.total_expenses);
+    outlet.deposits += numberValue(settlement.total_deposits);
+    outlet.shift_count += 1;
+  }
+
+  return [...summaries.values()].sort((left, right) =>
+    left.outlet_name.localeCompare(right.outlet_name),
+  );
+}
+
 function section(title: string, rows: Array<Array<string | number>>) {
   return [[""], [title], ...rows];
 }
@@ -399,11 +492,12 @@ function buildDailySheets(params: {
         (row) => settlementDate(row) === date,
       );
       const income = transactions
-        .filter((row) => row.type === "INCOME")
-        .reduce((sum, row) => sum + numberValue(row.amount), 0);
+        .filter((row) => row.type === "INCOME" && row.reference_type !== "SALE")
+        .reduce((sum, row) => sum + numberValue(row.amount), 0) +
+        sales.reduce((sum, sale) => sum + numberValue(sale.grand_total), 0);
       const shiftExpenses = settlements.reduce((sum, row) => sum + numberValue(row.total_expenses), 0);
       const expense = transactions
-        .filter((row) => row.type === "EXPENSE")
+        .filter((row) => row.type === "EXPENSE" && row.reference_type !== "CASHIER_EXPENSE")
         .reduce((sum, row) => sum + numberValue(row.amount), 0) + shiftExpenses;
       const cashSales = sales.reduce(
         (sum, sale) => sum + paymentTotal(sale, "CASH"),
@@ -413,6 +507,12 @@ function buildDailySheets(params: {
         (sum, sale) => sum + paymentTotal(sale, "NONCASH"),
         0,
       );
+      const outletSummary = buildOutletSummary({
+        transactions,
+        sales,
+        purchases,
+        settlements,
+      });
 
       const values = [
         ["Daily Finance Report", date],
@@ -426,6 +526,20 @@ function buildDailySheets(params: {
           ["Noncash Sales", noncashSales],
           ["POS Sales Count", sales.length],
           ["Daily Purchases", purchases.length],
+        ]),
+        ...section("Outlet Summary", [
+          ["Outlet", "Income", "Expense", "Cash Sales", "Noncash Sales", "Purchases", "Sales Count", "Shifts", "Deposits"],
+          ...outletSummary.map((outlet) => [
+            outlet.outlet_name,
+            outlet.income,
+            outlet.expense,
+            outlet.cash_sales,
+            outlet.noncash_sales,
+            outlet.daily_purchase_total,
+            outlet.sales_count,
+            outlet.shift_count,
+            outlet.deposits,
+          ]),
         ]),
         ...section("Transactions", [
           ["Date", "Outlet", "Type", "Category", "Description", "Amount", "Payment"],
@@ -681,16 +795,23 @@ export class FinanceService {
     }));
 
     const income = transactions
-      .filter((row) => row.type === "INCOME")
-      .reduce((sum, row) => sum + numberValue(row.amount), 0);
+      .filter((row) => row.type === "INCOME" && row.reference_type !== "SALE")
+      .reduce((sum, row) => sum + numberValue(row.amount), 0) +
+      sales.reduce((sum, sale) => sum + numberValue(sale.grand_total), 0);
     const reportSettlements = settlementsWithLocation.filter((row) => {
       const openedAt = String(row.opened_at ?? "").slice(0, 10);
       return openedAt >= dateFrom && openedAt <= dateTo;
     });
     const expense = transactions
-      .filter((row) => row.type === "EXPENSE")
+      .filter((row) => row.type === "EXPENSE" && row.reference_type !== "CASHIER_EXPENSE")
       .reduce((sum, row) => sum + numberValue(row.amount), 0) +
       reportSettlements.reduce((sum, row) => sum + numberValue(row.total_expenses), 0);
+    const outletSummary = buildOutletSummary({
+      transactions,
+      sales,
+      purchases,
+      settlements: reportSettlements,
+    });
     const cashSales = sales.reduce((sum, sale) => {
       const payments: SalePaymentRow[] = Array.isArray(sale.sale_payments)
         ? sale.sale_payments
@@ -768,6 +889,7 @@ export class FinanceService {
         sales_count: sales.length,
         daily_purchase_count: purchases.length,
       },
+      outlet_summary: outletSummary,
       sheets,
       google,
     };

@@ -99,7 +99,9 @@ export class UserService {
     await userRepository.upsertRoles(defaultRoles);
     const roles = await userRepository.findRoles();
 
-    return roles;
+    const retiredAliases = new Set(["ADMIN", "OPERATOR", "AUDITOR"]);
+
+    return roles.filter((role) => !retiredAliases.has(role.name.toUpperCase()));
   }
 
   async createUser(payload: UserPayload) {

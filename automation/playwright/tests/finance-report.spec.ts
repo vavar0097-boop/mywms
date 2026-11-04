@@ -36,6 +36,15 @@ test.describe("finance monthly report", () => {
       true,
     );
     expect(report.summary).toBeTruthy();
+    expect(Array.isArray(report.outlet_summary)).toBe(true);
+    expect(
+      report.outlet_summary.every(
+        (outlet: { outlet_name?: string; income?: number; expense?: number }) =>
+          Boolean(outlet.outlet_name) &&
+          Number.isFinite(outlet.income) &&
+          Number.isFinite(outlet.expense),
+      ),
+    ).toBe(true);
 
     await api.dispose();
   });

@@ -4,6 +4,7 @@ import type {
   CreateTransferPayload,
   Transfer,
   TransferAction,
+  TransferReceivePayload,
 } from "../types/transfer.types";
 
 function unwrapApiPayload<T>(payload: unknown): T {
@@ -44,7 +45,7 @@ function normalizeTransferList(payload: unknown): Transfer[] {
 
 function normalizeTransfer(payload: unknown): Transfer {
   const row = payload as Transfer;
-  const items = row.items ?? row.transfer_items ?? [];
+  const items = row.items ?? row.transfer_items ?? row.stock_transfer_items ?? [];
 
   return {
     ...row,
@@ -111,12 +112,14 @@ export const transferService = {
     return normalizeTransferDetail(response.data);
   },
 
-  async runAction(id: string, action: TransferAction) {
+  async runAction(
+    id: string,
+    action: TransferAction,
+    payload: TransferReceivePayload | { remarks?: string } = { remarks: "" },
+  ) {
     const response = await apiClient.post(
       `/transfers/${id}/${action}`,
-      {
-        remarks: "",
-      },
+      payload,
     );
 
     return normalizeTransferDetail(response.data);

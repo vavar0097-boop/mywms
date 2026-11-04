@@ -3,6 +3,7 @@ import { Response } from "express";
 import {AuthRequest} from "../../../middleware/auth.middleware";
 
 import { TransferService } from "../services/transfer.service";
+import { transferReceiveSchema } from "../validators/transfer.validator";
 
 export class TransferController {
   constructor(
@@ -93,10 +94,11 @@ export class TransferController {
     req: AuthRequest,
     res: Response
   ) => {
+    const dto = transferReceiveSchema.parse(req.body);
     const result =
       await this.service.receive(
         String(req.params.id),
-        req.body,
+        dto,
         req.user!
       );
 

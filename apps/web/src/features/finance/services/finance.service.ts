@@ -129,6 +129,18 @@ export type MonthlyReport = {
     sales_count: number;
     daily_purchase_count: number;
   };
+  outlet_summary?: Array<{
+    outlet_id: string | null;
+    outlet_name: string;
+    income: number;
+    expense: number;
+    cash_sales: number;
+    noncash_sales: number;
+    daily_purchase_total: number;
+    sales_count: number;
+    shift_count: number;
+    deposits: number;
+  }>;
   google: {
     synced: boolean;
     reason?: string;

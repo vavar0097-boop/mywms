@@ -1,5 +1,5 @@
 import { ArrowLeft, RefreshCw } from "lucide-react";
-import { useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -56,6 +56,10 @@ function eventTitle(event: TransferEvent) {
 
 export function TransferDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [receiveCheckOpen, setReceiveCheckOpen] = useState(false);
+  const [receiveCounts, setReceiveCounts] = useState<Record<string, string>>({});
+  const [receiveRemarks, setReceiveRemarks] = useState("");
+  const [savingReceipt, setSavingReceipt] = useState(false);
   const role = useAuthStore((state) => state.user?.role);
   const canManage = hasPermission(role, PERMISSIONS.TRANSFERS_ACTION);
   const canRequest = hasPermission(role, PERMISSIONS.TRANSFERS_REQUEST);
@@ -98,6 +102,16 @@ export function TransferDetailPage() {
   async function handleAction(action: TransferAction) {
     if (!id) return;
 
+    if (action === "receive") {
+      setReceiveCounts(Object.fromEntries(transferItems.map((item) => [
+        item.id ?? item.item_id,
+        String(item.qty_shipped ?? item.qty_picked ?? item.qty_requested ?? 0),
+      ])));
+      setReceiveRemarks("");
+      setReceiveCheckOpen(true);
+      return;
+    }
+
     try {
       await runAction(id, action);
 
@@ -110,6 +124,39 @@ export function TransferDetailPage() {
         "Transfer action failed",
         getApiErrorMessage(error),
       );
+    }
+  }
+
+  async function submitPhysicalReceipt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!id) return;
+
+    const invalidItem = transferItems.find((item) => {
+      const itemKey = item.id ?? item.item_id;
+      const received = Number(receiveCounts[itemKey]);
+      const shipped = Number(item.qty_shipped ?? item.qty_picked ?? 0);
+      return !Number.isFinite(received) || received < 0 || received > shipped;
+    });
+    if (invalidItem) {
+      toast.error("Jumlah penerimaan tidak valid", "Masukkan jumlah fisik antara 0 dan jumlah yang dikirim.");
+      return;
+    }
+
+    setSavingReceipt(true);
+    try {
+      await runAction(id, "receive", {
+        remarks: receiveRemarks.trim() || undefined,
+        items: transferItems.map((item) => ({
+          transfer_item_id: item.id!,
+          qty_received: Number(receiveCounts[item.id ?? item.item_id]),
+        })),
+      });
+      setReceiveCheckOpen(false);
+      toast.success("Barang diterima", "Stok outlet telah disesuaikan dengan hitungan fisik.");
+    } catch (error) {
+      toast.error("Penerimaan gagal", getApiErrorMessage(error));
+    } finally {
+      setSavingReceipt(false);
     }
   }
 
@@ -184,6 +231,62 @@ export function TransferDetailPage() {
           />
         </div>
       </div>
+
+      {receiveCheckOpen ? (
+        <form onSubmit={submitPhysicalReceipt} className="rounded-lg border border-teal-200 bg-white p-4">
+          <div className="mb-4">
+            <h2 className="text-base font-bold text-slate-950">Cocokkan barang datang</h2>
+            <p className="mt-1 text-sm text-slate-500">Hitung jumlah fisik tiap barang. Selisih akan dicatat pada riwayat transfer.</p>
+          </div>
+          <div className="space-y-3">
+            {transferItems.map((item) => {
+              const key = item.id ?? item.item_id;
+              const shipped = Number(item.qty_shipped ?? item.qty_picked ?? 0);
+                  const counted = Number(receiveCounts[key] ?? shipped);
+              return (
+                    <div key={key} className="grid grid-cols-[1fr_auto_120px] items-center gap-3 text-sm">
+                      <span className="font-medium text-slate-800">{itemName(item)}</span>
+                      <span className="text-slate-500">Dikirim {shipped}</span>
+                      <input
+                        aria-label={`Jumlah diterima ${itemName(item)}`}
+                        type="number"
+                        min="0"
+                        max={shipped}
+                        step="0.0001"
+                        required
+                        value={receiveCounts[key] ?? ""}
+                        onChange={(change) => setReceiveCounts((current) => ({
+                          ...current,
+                          [key]: change.target.value,
+                        }))}
+                        className="h-10 rounded-lg border border-slate-200 px-3 text-right text-sm"
+                      />
+                      <p className={`col-span-3 text-right text-xs ${counted < shipped ? "font-semibold text-amber-700" : "text-slate-500"}`}>
+                        Selisih {counted - shipped}
+                      </p>
+                    </div>
+              );
+            })}
+          </div>
+          <label className="mt-4 block space-y-1 text-sm font-medium text-slate-700">
+            Catatan selisih / penerimaan
+            <input
+              value={receiveRemarks}
+              onChange={(event) => setReceiveRemarks(event.target.value)}
+              maxLength={500}
+              className="h-10 w-full rounded-lg border border-slate-200 px-3"
+            />
+          </label>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button type="button" variant="outline" disabled={savingReceipt} onClick={() => setReceiveCheckOpen(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={savingReceipt}>
+              {savingReceipt ? "Menyimpan..." : "Konfirmasi penerimaan"}
+            </Button>
+          </div>
+        </form>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6">
