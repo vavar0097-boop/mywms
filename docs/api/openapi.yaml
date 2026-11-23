@@ -1,0 +1,239 @@
+openapi: 3.1.0
+info:
+  title: Enterprise WMS API
+  version: 1.10.0
+  description: >-
+    Core API contract for health, authentication, inventory, transfers,
+    purchasing, POS, and finance. Route-level validation schemas remain the
+    source of truth for request and response fields; update this document when
+    those contracts change.
+servers:
+  - url: https://mywms-six.vercel.app/api
+    description: Production API
+  - url: http://localhost:3000/api
+    description: Local API
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Items
+  - name: Stock
+  - name: Transfers
+  - name: Purchase orders
+  - name: POS
+  - name: Finance
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Check API liveness
+      responses:
+        "200":
+          description: API process is responding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Sign in and set HTTP-only access and refresh cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Login successful; cookies are set in the response
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          description: Invalid request body
+        "401":
+          description: Invalid credentials
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get the authenticated user
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          description: Missing or invalid access cookie
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh the access cookie
+      security:
+        - refreshCookie: []
+      responses:
+        "200":
+          description: Access cookie refreshed
+        "401":
+          description: Missing or invalid refresh cookie
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Clear authentication cookies
+      responses:
+        "200":
+          description: Cookies cleared
+  /items:
+    get:
+      tags: [Items]
+      summary: List items
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Item list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+    post:
+      tags: [Items]
+      summary: Create an item
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Item created
+        "400":
+          description: Invalid item
+  /stocks/current:
+    get:
+      tags: [Stock]
+      summary: Read current stock
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Current stock records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /stocks/opnames:
+    get:
+      tags: [Stock]
+      summary: List stocktakes
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Stocktake records
+    post:
+      tags: [Stock]
+      summary: Create a stocktake
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Stocktake created
+        "403":
+          description: Permission denied
+  /transfers:
+    get:
+      tags: [Transfers]
+      summary: List transfers
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Transfer records
+    post:
+      tags: [Transfers]
+      summary: Create a transfer
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Transfer created
+        "403":
+          description: Permission denied
+  /purchase-orders:
+    get:
+      tags: [Purchase orders]
+      summary: List purchase orders
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Purchase order records
+    post:
+      tags: [Purchase orders]
+      summary: Create a purchase order
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Purchase order created
+        "403":
+          description: Permission denied
+  /pos/sales:
+    post:
+      tags: [POS]
+      summary: Record a POS sale
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Sale recorded
+        "403":
+          description: Permission denied
+  /finance/transactions:
+    get:
+      tags: [Finance]
+      summary: List finance transactions
+      security:
+        - accessCookie: []
+      responses:
+        "200":
+          description: Finance transactions
+    post:
+      tags: [Finance]
+      summary: Create a finance transaction
+      security:
+        - accessCookie: []
+      responses:
+        "201":
+          description: Transaction created
+        "403":
+          description: Permission denied
+components:
+  securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: access_token
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+  schemas:
+    ApiResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data: {}

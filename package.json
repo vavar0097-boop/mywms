@@ -11,6 +11,7 @@
     "dev:web": "npm run dev --workspace apps/web",
     "build:api": "npm run build --workspace apps/api",
     "build:web": "npm run build --workspace apps/web",
+    "test:api": "npm test --workspace apps/api",
     "db:status": "npm run db:status --workspace apps/api",
     "db:baseline": "npm run db:baseline --workspace apps/api",
     "db:migrate": "npm run db:migrate --workspace apps/api",

@@ -10,16 +10,36 @@ database/
   migrations/          Canonical SQL migrations
   seeds/               Seed data placeholders
 docs/                  Architecture, API, and database notes
-packages/
-  shared-types/        Cross-app TypeScript types
-  shared-utils/        Cross-app utility helpers
 scripts/               Root-level automation helpers
 supabase/              Supabase CLI state, migrations, and snippets
 ```
 
 Generated files such as `dist/`, `build/`, `coverage/`, `logs/`, and
 `node_modules/` are intentionally ignored. Source changes should live under
-`apps/`, `packages/`, `database/`, `docs/`, or `scripts/`.
+`apps/`, `database/`, `docs/`, or `scripts/`.
+
+### Checks
+
+The GitHub Actions workflow runs the API build and independent API unit tests,
+then type-checks and builds the web app. Run the same checks locally with:
+
+```bash
+npm run test:api
+npm run build:web
+```
+
+The API tests are independent; none relies on another test's state or order.
+
+### End-to-end testing
+
+Playwright runs public smoke tests when role credentials are absent; with
+credentials configured it also runs authenticated scenarios. For local
+end-to-end testing, use `npm run test:local` from `automation/playwright`; with
+no API override, the browser app and API checks target localhost, but the local
+API still uses the Supabase credentials in its `.env`. This deployment has one
+production environment: use Playwright only for non-mutating checks and keep
+`WMS_ALLOW_MUTATION=false`. The runner rejects the known production origins if
+mutation testing is enabled.
 
 ### Local Access
 
@@ -121,3 +141,11 @@ npm run create-admin
 Use `db:baseline` once for an existing Supabase database that already has the
 tables from `database/migrations`. Use `db:migrate` for new migration files
 after that.
+
+See [backend architecture](docs/architecture/backend.md),
+[frontend architecture](docs/architecture/frontend.md),
+[database architecture](docs/architecture/database.md), the
+[ERD overview](docs/database/erd.md), and the
+[migration history](docs/database/migration-history.md) for implementation
+details. The OpenAPI document describes the core API contract; update it when
+routes or payloads change.

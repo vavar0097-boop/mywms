@@ -7,7 +7,7 @@
     "test": "playwright test",
     "test:smoke": "playwright test --project=public-smoke",
     "test:full": "playwright test",
-    "test:local": "WMS_START_LOCAL_WEB=true playwright test",
+    "test:local": "playwright test --config=playwright.local.config.ts",
     "test:firefox": "playwright test --project=firefox",
     "test:headed": "playwright test --headed",
     "test:record": "WMS_RECORD=true playwright test --headed --project=firefox",

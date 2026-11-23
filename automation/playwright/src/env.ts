@@ -1,3 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { config as loadEnv } from "dotenv";
+
+const configDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+loadEnv({ path: path.join(configDir, ".env"), quiet: true });
+
 export type Credentials = {
   username: string;
   password: string;
@@ -26,7 +37,10 @@ export const appUrl =
     : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 
 export const apiBaseUrl =
-  process.env.WMS_API_BASE_URL || "https://mywms-six.vercel.app";
+  process.env.WMS_API_BASE_URL ||
+  (process.env.WMS_START_LOCAL_WEB === "true"
+    ? "http://127.0.0.1:3000"
+    : "https://mywms-six.vercel.app");
 
 export const reportMonth =
   process.env.WMS_REPORT_MONTH || currentJakartaMonth();
@@ -34,6 +48,7 @@ export const reportMonth =
 export const syncGoogle = process.env.WMS_SYNC_GOOGLE === "true";
 
 export const allowMutation = process.env.WMS_ALLOW_MUTATION === "true";
+export const mutationTarget = process.env.WMS_MUTATION_TARGET;
 
 export const purchaseReceiveRpcReady =
   process.env.WMS_PO_RECEIVE_RPC_READY === "true";

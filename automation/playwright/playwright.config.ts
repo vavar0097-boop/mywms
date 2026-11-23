@@ -1,21 +1,44 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
-import { credentialsFor } from "./src/env";
+import {
+  allowMutation,
+  apiBaseUrl,
+  appUrl,
+  credentialsFor,
+  mutationTarget,
+} from "./src/env";
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
-loadEnv({ path: path.join(configDir, ".env"), quiet: true });
 
 const startLocalWeb = process.env.WMS_START_LOCAL_WEB === "true";
-const appUrl =
-  startLocalWeb
-    ? process.env.WMS_LOCAL_APP_URL || "http://127.0.0.1:5173"
-    : process.env.WMS_APP_URL || "https://mywms-686.pages.dev";
 const recordRun = process.env.WMS_RECORD === "true";
 const roles = ["admin", "owner", "finance", "warehouse", "supervisor", "cashier"] as const;
 const hasAllRoleCredentials = roles.every((role) => credentialsFor(role));
+
+if (allowMutation) {
+  if (
+    mutationTarget !== "qa" ||
+    !process.env.WMS_APP_URL ||
+    !process.env.WMS_API_BASE_URL
+  ) {
+    throw new Error(
+      "Mutation tests require WMS_MUTATION_TARGET=qa and explicit WMS_APP_URL and WMS_API_BASE_URL values.",
+    );
+  }
+
+  const productionOrigins = new Set([
+    "https://mywms-686.pages.dev",
+    "https://mywms-six.vercel.app",
+  ]);
+  const configuredOrigins = [appUrl, apiBaseUrl].map(
+    (url) => new URL(url).origin,
+  );
+  if (configuredOrigins.some((origin) => productionOrigins.has(origin))) {
+    throw new Error("Mutation tests cannot target the production deployment.");
+  }
+}
 
 export default defineConfig({
   testDir: "./tests",

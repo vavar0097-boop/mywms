@@ -11,7 +11,7 @@
     "build": "tsc",
     "build:api": "npm run build",
     "start": "node dist/server.js",
-    "test": "jest --passWithNoTests",
+    "test": "npm run build && jest --runInBand",
     "create-admin": "tsx scripts/create-admin.ts",
     "db:status": "tsx scripts/db.ts status",
     "db:baseline": "tsx scripts/db.ts baseline",

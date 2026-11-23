@@ -11,7 +11,8 @@ npm run install:browsers
 cp .env.example .env
 ```
 
-Fill `.env` with live QA credentials. The `.env` file is ignored by git.
+If you need authenticated checks, fill `.env` with production credentials and
+use them only for non-mutating tests. The `.env` file is ignored by git.
 
 ## Run
 
@@ -35,8 +36,10 @@ Run the complete configured suite with:
 npm run test:full
 ```
 
-If the shared hosting frontend is unavailable, run the suite against a local Vite
-frontend connected to the production API:
+If the shared hosting frontend is unavailable, run against a local Vite frontend
+and local API. The Vite proxy and API health checks use localhost by default.
+The local API still uses whichever Supabase credentials are configured in its
+`.env`, so this does not create an isolated database:
 
 ```bash
 npm run test:local
@@ -79,11 +82,9 @@ Enable the Google Sheets assertion only after the production API has Google env 
 WMS_SYNC_GOOGLE=true
 ```
 
-Enable create/update/delete workflow coverage only when the target environment is safe for QA mutations. The test creates a hidden POS menu, saves a BOM, verifies it in the UI, then deletes it.
-
-```env
-WMS_ALLOW_MUTATION=true
-```
+Mutation workflows change persistent data and are not safe for this
+production-only setup. Keep `WMS_ALLOW_MUTATION=false`; the runner rejects the
+known production app and API origins if mutation coverage is enabled.
 
 The public smoke checks verify:
 
@@ -105,4 +106,4 @@ When role credentials are configured, the authenticated tests verify:
 - core admin routes do not render blank pages
 - key forms and dropdowns open correctly
 - UI health checks catch console errors and page overflow
-- optional mutation workflow covers POS menu and BOM create/update/delete
+- write workflows are skipped unless mutation testing is explicitly enabled
